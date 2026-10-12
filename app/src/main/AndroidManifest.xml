@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:label="MC Server Host"
+        android:icon="@mipmap/ic_launcher"
+        android:extractNativeLibs="true"
+        android:theme="@style/Theme.Material3.DayNight">
+
+        <activity android:name=".ui.MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".ui.CreateServerActivity" android:exported="false" />
+
+        <activity android:name=".ui.ServerDetailActivity" android:exported="false" />
+
+        <activity android:name=".ui.ServerPropertiesActivity" android:exported="false" />
+
+        <activity android:name=".ui.ModBrowserActivity" android:exported="false" />
+
+        <activity android:name=".ui.ServerLogsActivity" android:exported="false" />
+
+        <activity android:name=".ui.InstalledModsActivity" android:exported="false" />
+
+        <activity android:name=".ui.ModDetailActivity" android:exported="false" />
+
+        <activity android:name=".ui.InstallationLogsActivity" android:exported="false" />
+
+        <service
+            android:name=".service.MinecraftServerService"
+            android:foregroundServiceType="specialUse"
+            android:exported="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="minecraft_server_hosting" />
+        </service>
+
+        <service
+            android:name=".service.ModInstallService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
+
+    </application>
+
+</manifest>

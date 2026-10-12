@@ -1,0 +1,222 @@
+package com.pcaudio.minecraft_server.core
+
+import android.content.Context
+import android.os.Build
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.File
+
+class RootTermuxBootstrap(private val context: Context, private val jdkMajor: Int = 21) : JavaRuntimeProvider {
+
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .build()
+
+    private val prefixDir = File(context.filesDir, "usr")
+
+    override fun isInstalled(): Boolean {
+        val javaLibDir = File(prefixDir, "lib/jvm/${JdkVersionResolver.javaHomeDirName(jdkMajor)}/lib")
+        return javaBinary().exists() &&
+                File(javaLibDir, "libz.so.1").exists() &&
+                File(javaLibDir, "libandroid-shmem.so").exists() &&
+                File(javaLibDir, "libandroid-spawn.so").exists()
+    }
+
+    override fun javaBinary(): File = File(prefixDir, "lib/jvm/${JdkVersionResolver.javaHomeDirName(jdkMajor)}/bin/java")
+
+    override fun libraryDir(): File = File(prefixDir, "lib/jvm/${JdkVersionResolver.javaHomeDirName(jdkMajor)}/lib")
+
+    override fun homeDir(): File = File(context.filesDir, "home").apply { mkdirs() }
+
+    override fun ensureRuntimeData(onProgress: (String) -> Unit) {
+        if (isInstalled()) {
+            onProgress("Runtime Java (root) già presente")
+            return
+        }
+        remountExec(onProgress)
+        val debFile = downloadBootstrap(onProgress)
+        extractAndInstall(debFile, onProgress)
+        installExtraLibrary("zlib", "1.3.2", "z", onProgress)
+        installExtraLibrary("libandroid-shmem", "0.7", "liba", onProgress)
+        installExtraLibrary("libandroid-spawn", "0.3", "liba", onProgress)
+        remountExec(onProgress)
+        fixPermissions(onProgress)
+    }
+
+    private fun runAsRoot(command: String): Int {
+        val process = ProcessBuilder("su", "-c", command).start()
+        return process.waitFor()
+    }
+
+    fun remountExec(onProgress: (String) -> Unit) {
+        onProgress("Remount partizione con permesso di esecuzione")
+        try {
+            val dataPath = context.filesDir.absolutePath
+            runAsRoot("mount -o remount,exec \"$dataPath\"")
+        } catch (e: Exception) {
+            onProgress("Remount fallito: ${e.message}")
+        }
+    }
+
+    private fun currentArch(): String {
+        val abi = Build.SUPPORTED_ABIS[0]
+        return when (abi) {
+            "arm64-v8a" -> "aarch64"
+            "armeabi-v7a" -> "arm"
+            "x86_64" -> "x86_64"
+            "x86" -> "i686"
+            else -> throw IllegalStateException("ABI non supportata: $abi")
+        }
+    }
+
+    private fun bootstrapUrl(): String {
+        val pkgName = JdkVersionResolver.packageName(jdkMajor)
+        val pkgVersion = JdkVersionResolver.packageVersion(jdkMajor)
+        return "https://packages.termux.dev/apt/termux-main/pool/main/o/$pkgName/${pkgName}_${pkgVersion}_${currentArch()}.deb"
+    }
+
+    private fun downloadBootstrap(onProgress: (String) -> Unit): File {
+        onProgress("Download runtime Java")
+        val request = Request.Builder().url(bootstrapUrl()).build()
+        val response = client.newCall(request).execute()
+        val body = response.body ?: throw IllegalStateException("Download fallito")
+
+        val totalBytes = body.contentLength()
+        val debFile = File(context.cacheDir, "openjdk.deb")
+
+        var downloadedBytes = 0L
+        var lastReportedPercent = -1
+
+        body.byteStream().use { input ->
+            debFile.outputStream().use { output ->
+                val buffer = ByteArray(8192)
+                var bytesRead: Int
+                while (input.read(buffer).also { bytesRead = it } != -1) {
+                    output.write(buffer, 0, bytesRead)
+                    downloadedBytes += bytesRead
+
+                    if (totalBytes > 0) {
+                        val percent = ((downloadedBytes * 100) / totalBytes).toInt()
+                        if (percent != lastReportedPercent && percent % 5 == 0) {
+                            lastReportedPercent = percent
+                            val mbDownloaded = downloadedBytes / (1024 * 1024)
+                            val mbTotal = totalBytes / (1024 * 1024)
+                            onProgress("Download runtime Java: $percent% (${mbDownloaded}MB / ${mbTotal}MB)")
+                        }
+                    }
+                }
+            }
+        }
+
+        onProgress("Download completato (${downloadedBytes / (1024 * 1024)}MB)")
+
+        if (downloadedBytes < 1024 * 1024) {
+            throw IllegalStateException("Download sospetto: solo $downloadedBytes byte ricevuti. URL probabilmente non valido: ${bootstrapUrl()}")
+        }
+
+        return debFile
+    }
+
+    private fun extractAndInstall(debFile: File, onProgress: (String) -> Unit) {
+        onProgress("Estrazione pacchetto")
+        prefixDir.mkdirs()
+
+        val extractor = DebExtractor()
+        val workDir = context.cacheDir
+
+        val dataTarXz = extractor.extractDataTarXz(debFile, workDir)
+        onProgress("Archivio dati estratto, decompressione JDK")
+
+        extractor.extractTarXz(
+            tarXzFile = dataTarXz,
+            outputDir = prefixDir,
+            stripComponents = 6
+        )
+
+        dataTarXz.delete()
+        onProgress("JDK estratto in ${prefixDir.absolutePath}")
+    }
+
+    private fun installExtraLibrary(packageName: String, version: String, poolPrefix: String, onProgress: (String) -> Unit) {
+        val javaLibDir = File(prefixDir, "lib/jvm/${JdkVersionResolver.javaHomeDirName(jdkMajor)}/lib")
+
+        onProgress("Download $packageName")
+        val url = "https://packages.termux.dev/apt/termux-main/pool/main/$poolPrefix/$packageName/${packageName}_${version}_${currentArch()}.deb"
+        val request = Request.Builder().url(url).build()
+        val response = client.newCall(request).execute()
+        val body = response.body ?: throw IllegalStateException("Download $packageName fallito")
+
+        val debFile = File(context.cacheDir, "$packageName.deb")
+        var downloadedBytes = 0L
+        body.byteStream().use { input ->
+            debFile.outputStream().use { out ->
+                downloadedBytes = input.copyTo(out)
+            }
+        }
+
+        if (downloadedBytes < 1024) {
+            throw IllegalStateException("Download sospetto per $packageName: solo $downloadedBytes byte. URL: $url")
+        }
+
+        val extractor = DebExtractor()
+        val dataTarXz = extractor.extractDataTarXz(debFile, context.cacheDir)
+
+        val extractDir = File(context.cacheDir, "${packageName}_extracted")
+        extractDir.deleteRecursively()
+        extractDir.mkdirs()
+        extractor.extractTarXz(tarXzFile = dataTarXz, outputDir = extractDir, stripComponents = 0)
+
+        val libraryFiles = extractDir.walkTopDown()
+            .filter { it.isFile && it.name.startsWith("lib") && it.name.contains(".so") && it.length() > 0 }
+            .toList()
+
+        javaLibDir.mkdirs()
+        for (libFile in libraryFiles) {
+            libFile.copyTo(File(javaLibDir, libFile.name), overwrite = true)
+            File(javaLibDir, libFile.name).setExecutable(true)
+            onProgress("Installata: ${libFile.name} (${libFile.length()} byte)")
+
+            for (variantName in generateVersionVariants(libFile.name)) {
+                if (variantName != libFile.name) {
+                    libFile.copyTo(File(javaLibDir, variantName), overwrite = true)
+                    File(javaLibDir, variantName).setExecutable(true)
+                }
+            }
+        }
+
+        if (libraryFiles.isEmpty()) {
+            onProgress("ATTENZIONE: nessuna libreria trovata in $packageName")
+        }
+
+        debFile.delete()
+        dataTarXz.delete()
+        extractDir.deleteRecursively()
+    }
+
+    private fun generateVersionVariants(fileName: String): List<String> {
+        val soIndex = fileName.indexOf(".so")
+        if (soIndex == -1) return listOf(fileName)
+
+        val baseName = fileName.substring(0, soIndex + 3)
+        val versionSuffix = fileName.substring(soIndex + 3)
+        if (versionSuffix.isEmpty()) return listOf(fileName)
+
+        val versionParts = versionSuffix.removePrefix(".").split(".")
+        val variants = mutableListOf(baseName)
+
+        var accumulated = baseName
+        for (part in versionParts) {
+            accumulated = "$accumulated.$part"
+            variants.add(accumulated)
+        }
+
+        return variants
+    }
+
+    private fun fixPermissions(onProgress: (String) -> Unit) {
+        onProgress("Impostazione permessi esecuzione")
+        runAsRoot("chmod -R 755 ${prefixDir.absolutePath}")
+    }
+}
