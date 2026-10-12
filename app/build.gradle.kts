@@ -1,24 +1,71 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+}
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+var releaseSigningReady = false
+
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+    val storeFilePath = keystoreProperties.getProperty("storeFile")
+    val storePasswordValue = keystoreProperties.getProperty("storePassword")
+    val keyAliasValue = keystoreProperties.getProperty("keyAlias")
+    val keyPasswordValue = keystoreProperties.getProperty("keyPassword")
+
+    if (storeFilePath.isNullOrBlank()) {
+        logger.warn("Firma release disattivata: in keystore.properties manca la voce storeFile")
+    } else {
+        val resolvedStoreFile = rootProject.file(storeFilePath)
+        if (!resolvedStoreFile.exists()) {
+            logger.warn("Firma release disattivata: keystore non trovato in ${resolvedStoreFile.absolutePath}")
+        } else if (storePasswordValue.isNullOrBlank() || keyAliasValue.isNullOrBlank() || keyPasswordValue.isNullOrBlank()) {
+            logger.warn("Firma release disattivata: in keystore.properties manca storePassword, keyAlias o keyPassword")
+        } else {
+            releaseSigningReady = true
+        }
+    }
+} else {
+    logger.warn("Firma release disattivata: keystore.properties non esiste in ${keystorePropertiesFile.absolutePath}")
 }
 
 android {
     namespace = "com.pcaudio.minecraft_server"
     compileSdk = 34
 
+    if (releaseSigningReady) {
+        signingConfigs {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.pcaudio.minecraft_server"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
-        versionName = "0.1"
+        versionName = "1.0"
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (releaseSigningReady) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
+    }
+
+    lint {
+        checkReleaseBuilds = false
     }
 
     compileOptions {

@@ -16,3 +16,7 @@ local.properties
 
 app/src/main/jniLibs/
 app/src/main/assets/native_binary_map.json
+
+*.jks
+*.keystore
+keystore.properties
