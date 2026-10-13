@@ -1,3 +1,5 @@
+[Italiano](README.md) · **English**
+
 # MC Server Host
 
 App Android nativa che trasforma un telefono in un host per server **Minecraft Java Edition**:
