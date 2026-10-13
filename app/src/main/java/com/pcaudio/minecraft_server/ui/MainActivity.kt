@@ -56,6 +56,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        findViewById<Button>(R.id.buttonNetwork).setOnClickListener {
+            startActivity(Intent(this, NetworkActivity::class.java))
+        }
+
         findViewById<Button>(R.id.buttonInstallLogs).setOnClickListener {
             startActivity(Intent(this, InstallationLogsActivity::class.java))
         }

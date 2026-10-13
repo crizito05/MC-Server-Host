@@ -10,7 +10,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Nuovo server"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="8dp" />
+
+    <Button
+        android:id="@+id/buttonNetwork"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Connessione dall'esterno" />
 
     <Button
         android:id="@+id/buttonInstallLogs"

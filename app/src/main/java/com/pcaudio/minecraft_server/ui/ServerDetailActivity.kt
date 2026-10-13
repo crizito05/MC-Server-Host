@@ -1,5 +1,8 @@
 package com.pcaudio.minecraft_server.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -8,8 +11,12 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.pcaudio.minecraft_server.R
+import com.pcaudio.minecraft_server.core.ApiKeyStore
+import com.pcaudio.minecraft_server.core.PlayitApi
+import com.pcaudio.minecraft_server.core.PlayitTunnel
 import com.pcaudio.minecraft_server.core.ServerConfig
 import com.pcaudio.minecraft_server.core.ServerRepository
 import com.pcaudio.minecraft_server.service.MinecraftServerService
@@ -21,6 +28,9 @@ class ServerDetailActivity : AppCompatActivity() {
     private lateinit var consoleScroll: ScrollView
     private lateinit var buttonStartStop: Button
     private lateinit var inputCommand: EditText
+    private lateinit var textTunnelAddress: TextView
+    private var tunnelAddress = ""
+    private var tunnelAddressProblem = ""
 
     private val logListener: (String) -> Unit = { line ->
         runOnUiThread { appendConsoleLine(line) }
@@ -51,6 +61,15 @@ class ServerDetailActivity : AppCompatActivity() {
         consoleScroll = findViewById(R.id.consoleScroll)
         buttonStartStop = findViewById(R.id.buttonStartStop)
         inputCommand = findViewById(R.id.inputCommand)
+        textTunnelAddress = findViewById(R.id.textTunnelAddress)
+
+        textTunnelAddress.setOnClickListener {
+            if (tunnelAddress.isNotBlank()) {
+                showCopiableDialog("Indirizzo del server", tunnelAddress, "Indirizzo copiato")
+            } else if (tunnelAddressProblem.isNotBlank()) {
+                showCopiableDialog("Indirizzo non disponibile", tunnelAddressProblem, "Testo copiato")
+            }
+        }
 
         consoleScroll.setOnTouchListener { view, event ->
             view.parent.requestDisallowInterceptTouchEvent(true)
@@ -99,6 +118,7 @@ class ServerDetailActivity : AppCompatActivity() {
         super.onStart()
         MinecraftServerService.addLogListener(logListener)
         MinecraftServerService.addStateListener(stateListener)
+        refreshTunnelAddress()
     }
 
     override fun onStop() {
@@ -118,6 +138,62 @@ class ServerDetailActivity : AppCompatActivity() {
         } else {
             super.onBackPressed()
         }
+    }
+
+    private fun refreshTunnelAddress() {
+        Thread {
+            var address = ""
+            var problem = ""
+            try {
+                val secret = ApiKeyStore(this).getPlayitSecret()
+                if (!secret.isNullOrBlank()) {
+                    val tunnels: List<PlayitTunnel> = PlayitApi().listTunnels(secret)
+                    val usable = tunnels.map { it.displayAddress }.filter { it.isNotBlank() }
+                    val first = usable.firstOrNull()
+                    if (first == null) {
+                        problem = "Nessun tunnel playit con indirizzo assegnato: controlla Connessione dall'esterno"
+                    } else {
+                        address = first
+                    }
+                }
+            } catch (e: Exception) {
+                problem = e.message ?: "errore sconosciuto"
+            }
+            val finalAddress = address
+            val finalProblem = problem
+            runOnUiThread {
+                tunnelAddress = finalAddress
+                tunnelAddressProblem = finalProblem
+                if (finalAddress.isNotBlank()) {
+                    textTunnelAddress.text = finalAddress
+                    textTunnelAddress.visibility = View.VISIBLE
+                } else if (finalProblem.isNotBlank()) {
+                    textTunnelAddress.text = "indirizzo non disponibile"
+                    textTunnelAddress.visibility = View.VISIBLE
+                } else {
+                    textTunnelAddress.visibility = View.GONE
+                }
+            }
+        }.start()
+    }
+
+    private fun showCopiableDialog(title: String, body: String, toastText: String) {
+        val box = TextView(this)
+        box.text = body
+        box.setTextIsSelectable(true)
+        box.textSize = 15f
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        box.setPadding(padding, padding, padding, padding)
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(box)
+            .setPositiveButton("Copia") { _, _ ->
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("server_info", body))
+                Toast.makeText(this, toastText, Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Chiudi", null)
+            .show()
     }
 
     private fun onStartStopClicked() {

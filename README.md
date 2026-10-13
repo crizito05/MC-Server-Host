@@ -2,7 +2,8 @@
 
 App Android nativa che trasforma un telefono in un host per server **Minecraft Java Edition**:
 Vanilla, Fabric, Forge e NeoForge, con catalogo mod da Modrinth e CurseForge, console in tempo
-reale, editor di `server.properties`, log per sessione e analisi automatica degli errori.
+reale, editor di `server.properties`, log per sessione, analisi automatica degli errori e
+connessioni dall'esterno tramite il tunnel di playit.gg.
 
 Progetto indipendente, non affiliato a Mojang o Microsoft. Avviando un server l'utente scarica
 il server ufficiale e accetta la [Minecraft EULA](https://www.minecraft.net/eula).
@@ -69,6 +70,13 @@ Il resto dell'infrastruttura:
   nativa mancante, whitelist, `session.lock`, problemi di rete
 - eliminazione completa del server con fallback root, e terminazione preventiva dei processi
   Java residui prima di ogni avvio
+- connessioni dall'esterno con il tunnel di playit.gg: attivazione dell'agente dal telefono
+  senza computer, con recupero automatico del segreto e custodia nel keystore Android, oppure
+  inserimento manuale del segreto ottenuto dal sito o dal computer
+- agente del tunnel in servizio in primo piano con riavvio automatico, notifica di stato e guida
+  passo-passo integrata nella schermata di rete
+- indirizzo pubblico del server accanto al nome nella schermata del server: premendolo si mostra
+  per intero con un pulsante di copia
 
 ## Requisiti
 
@@ -76,6 +84,7 @@ Il resto dell'infrastruttura:
 - root con Magisk: di fatto obbligatorio, il percorso non-root è incompleto
 - circa 400 MB liberi per il runtime Java, più 60-100 MB per ogni server
 - connessione stabile in fase di creazione del server
+- account gratuito su playit.gg per giocare da fuori casa
 
 ## Compilazione
 
@@ -85,6 +94,11 @@ Android Studio ed esegui la build: per il percorso root non serve altro.
 Le dipendenze sono OkHttp 4.12.0, Commons Compress 1.26.2, XZ for Java 1.9, Coil 2.6.0,
 AndroidX core-ktx, appcompat, material, lifecycle-service, work-runtime, recyclerview e
 security-crypto.
+
+La build include anche l'agente del tunnel: scarica `playit-linux-aarch64` dall'ultima release di
+[playit-cloud/playit-agent](https://github.com/playit-cloud/playit-agent) e lo mette nell'APK
+rinominato come libreria nativa, l'unico modo per eseguirlo dentro la sandbox di un'app. Serve
+quindi la connessione anche in fase di build.
 
 I binari nativi non sono nel repository. Per generarli serve WSL con `curl`, `ar`, `tar` e
 `file`:
@@ -104,8 +118,9 @@ versione di Java alla volta.
 
 ## Limiti noti
 
-**Si gioca solo in LAN.** Il modulo di rete per le connessioni dall'esterno non è stato scritto:
-l'indirizzo va letto dalle impostazioni Wi-Fi del telefono.
+**Il tunnel vive finché vive l'agente.** Le connessioni dall'esterno passano dal tunnel di
+playit.gg, che resta attivo solo mentre l'agente gira: dopo il riavvio del telefono va riavviato
+dall'app. La creazione del tunnel si fa ancora dal sito playit.gg.
 
 **Percorso non-root incompleto.** Si blocca su `libz.so.1` dentro `jniLibs`, e la mappa attuale
 copre solo OpenJDK 17, quindi su quel percorso restano fuori le versioni di Minecraft che
@@ -129,7 +144,8 @@ già creato.
 
 ## Roadmap
 
-1. modulo di rete: tunnel, poi port forwarding con DDNS, poi VPN mesh, con fallback a cascata
+1. creazione e gestione dei tunnel playit.gg direttamente dal telefono, con port forwarding con
+   DDNS e VPN mesh come alternative successive
 2. completamento del percorso non-root
 3. comandi rapidi predefiniti in console a schermo intero
 4. installazione di `libm.so.6` su richiesta quando l'analizzatore dei log rileva la libreria
@@ -147,7 +163,7 @@ aggressiva: termina qualunque processo Java residuo dell'app.
 
 Le chiavi API di CurseForge restano sul dispositivo, nel keystore Android tramite
 `androidx.security:security-crypto`, e non vengono scritte nel codice né nei log. Modrinth
-funziona senza chiave.
+funziona senza chiave. Il segreto dell'agente playit.gg è custodito nello stesso modo.
 
 Un telefono non è progettato per restare acceso sotto carico continuo: sorveglia temperatura e
 batteria.

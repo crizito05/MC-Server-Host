@@ -29,4 +29,16 @@ class ApiKeyStore(context: Context) {
     }
 
     fun hasCurseForgeKey(): Boolean = !getCurseForgeKey().isNullOrBlank()
+
+    fun getPlayitSecret(): String? = prefs.getString("playit_secret", null)
+
+    fun setPlayitSecret(secret: String) {
+        prefs.edit().putString("playit_secret", secret).apply()
+    }
+
+    fun clearPlayitSecret() {
+        prefs.edit().remove("playit_secret").apply()
+    }
+
+    fun hasPlayitSecret(): Boolean = !getPlayitSecret().isNullOrBlank()
 }
