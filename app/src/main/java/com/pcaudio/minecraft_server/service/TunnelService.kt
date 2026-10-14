@@ -17,6 +17,7 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.pcaudio.minecraft_server.R
 import com.pcaudio.minecraft_server.core.ApiKeyStore
 import com.pcaudio.minecraft_server.core.PlayitAgentManager
 import com.pcaudio.minecraft_server.ui.NetworkActivity
@@ -124,8 +125,8 @@ class TunnelService : Service() {
         agentManager = PlayitAgentManager(this) { line -> appendLog(line) }
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "Tunnel esterno", NotificationManager.IMPORTANCE_LOW)
-            channel.description = "Stato del tunnel playit.gg"
+            val channel = NotificationChannel(CHANNEL_ID, getString(R.string.tech_channel_tunnel_name), NotificationManager.IMPORTANCE_LOW)
+            channel.description = getString(R.string.tech_channel_tunnel_desc)
             notificationManager.createNotificationChannel(channel)
         }
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -141,7 +142,7 @@ class TunnelService : Service() {
         }
         stopping = false
         restartAttempts = 0
-        startForeground(NOTIF_ID, buildNotification("Avvio tunnel in corso"))
+        startForeground(NOTIF_ID, buildNotification(getString(R.string.tech_notif_tunnel_starting)))
         wakeLock?.acquire()
         wifiLock?.acquire()
         val secretExtra = intent?.getStringExtra("secret")
@@ -182,31 +183,31 @@ class TunnelService : Service() {
             try {
                 ApiKeyStore(this).getPlayitSecret()
             } catch (e: Exception) {
-                appendLog("Lettura del segreto non riuscita: " + e.message)
+                appendLog(getString(R.string.tech_log_secret_read_failed, e.message))
                 null
             }
         }
         if (secret.isNullOrBlank()) {
-            appendLog("Segreto playit non configurato: aprilo da Connessione dall'esterno")
-            updateNotification("Segreto playit mancante: aprilo da Connessione dall'esterno")
+            appendLog(getString(R.string.tech_log_secret_missing))
+            updateNotification(getString(R.string.tech_log_secret_missing))
             releaseLocks()
             pushState()
             return
         }
         val started = agentManager.start(secret) {
             if (!stopping) {
-                appendLog("Agente terminato in modo inatteso")
+                appendLog(getString(R.string.tech_log_agent_unexpected))
                 scheduleRestart()
             }
         }
         if (started) {
             agentStartedAt = System.currentTimeMillis()
             isAgentRunning = true
-            appendLog("Agente avviato")
-            updateNotification("Tunnel attivo")
+            appendLog(getString(R.string.tech_log_agent_started))
+            updateNotification(getString(R.string.tech_notif_tunnel_active))
             pushState()
         } else {
-            appendLog("Avvio dell'agente non riuscito")
+            appendLog(getString(R.string.tech_log_agent_start_failed))
             scheduleRestart()
         }
     }
@@ -220,16 +221,16 @@ class TunnelService : Service() {
             restartAttempts = 0
         }
         if (restartAttempts >= RESTART_DELAYS_MS.size) {
-            appendLog("Riavvii falliti: tunnel non attivo")
-            updateNotification("Tunnel non attivo: controlla la rete e riprova da Connessione dall'esterno")
+            appendLog(getString(R.string.tech_log_restarts_failed))
+            updateNotification(getString(R.string.tech_notif_tunnel_inactive))
             releaseLocks()
             pushState()
             return
         }
         val delay = RESTART_DELAYS_MS[restartAttempts]
         restartAttempts++
-        appendLog("Riavvio dell'agente tra " + delay / 1000 + " secondi")
-        updateNotification("Riavvio tra " + delay / 1000 + "s")
+        appendLog(getString(R.string.tech_log_restart_in, delay / 1000))
+        updateNotification(getString(R.string.tech_notif_restart_in, delay / 1000))
         pushState()
         handler.postDelayed({ executor.execute { doStartAgent(null) } }, delay)
     }
@@ -237,11 +238,11 @@ class TunnelService : Service() {
     private fun stopEverything() {
         stopping = true
         handler.removeCallbacksAndMessages(null)
-        startForeground(NOTIF_ID, buildNotification("Arresto tunnel in corso"))
+        startForeground(NOTIF_ID, buildNotification(getString(R.string.tech_notif_tunnel_stopping)))
         executor.execute {
             agentManager.stop()
             isAgentRunning = false
-            appendLog("Agente arrestato")
+            appendLog(getString(R.string.tech_log_agent_stopped))
             releaseLocks()
             pushState()
             stopForeground(STOP_FOREGROUND_REMOVE)
@@ -255,24 +256,24 @@ class TunnelService : Service() {
             val finished = rootProcess.waitFor(10, TimeUnit.SECONDS)
             if (!finished) {
                 rootProcess.destroyForcibly()
-                appendLog("Esonero batteria non applicato: timeout del comando root")
+                appendLog(getString(R.string.tech_log_battery_timeout))
             } else {
                 val output = rootProcess.inputStream.bufferedReader().readText().trim()
                 if (rootProcess.exitValue() == 0) {
-                    appendLog("Esonero batteria applicato")
+                    appendLog(getString(R.string.tech_log_battery_applied))
                 } else {
-                    appendLog("Esonero batteria non applicato: " + output)
+                    appendLog(getString(R.string.tech_log_battery_failed, output))
                 }
             }
         } catch (e: Exception) {
-            appendLog("Esonero batteria non applicato: " + e.message)
+            appendLog(getString(R.string.tech_log_battery_failed, e.message))
         }
         try {
             val batteryIntent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + packageName))
             batteryIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(batteryIntent)
         } catch (e: Exception) {
-            appendLog("Impossibile aprire l'ottimizzazione batteria: " + e.message)
+            appendLog(getString(R.string.tech_log_battery_open_failed, e.message))
         }
     }
 
@@ -283,11 +284,11 @@ class TunnelService : Service() {
         val openPendingIntent = PendingIntent.getActivity(this, 0, openIntent, PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(applicationInfo.icon)
-            .setContentTitle("Tunnel playit.gg")
+            .setContentTitle(getString(R.string.tech_notif_tunnel_title))
             .setContentText(text)
             .setOngoing(true)
             .setContentIntent(openPendingIntent)
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Ferma", stopPendingIntent)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, getString(R.string.tech_notif_stop), stopPendingIntent)
             .build()
     }
 

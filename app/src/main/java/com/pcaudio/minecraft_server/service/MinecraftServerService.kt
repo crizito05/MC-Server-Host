@@ -11,6 +11,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
+import com.pcaudio.minecraft_server.R
 import com.pcaudio.minecraft_server.core.LaunchCommandResolver
 import com.pcaudio.minecraft_server.core.TermuxBootstrap
 import java.io.File
@@ -92,7 +93,7 @@ class MinecraftServerService : Service() {
         val ramMb = intent.getIntExtra("ram_mb", 2048)
 
         synchronized(logBuffer) { logBuffer.clear() }
-        startForeground(NOTIF_ID, buildNotification("Avvio in corso"))
+        startForeground(NOTIF_ID, buildNotification(getString(R.string.tech_server_starting)))
         wakeLock.acquire()
         runningServerId = serverId
         pushState(true)
@@ -134,7 +135,7 @@ class MinecraftServerService : Service() {
                     checkCmd.waitFor()
 
                     if (existingPids.isNotBlank()) {
-                        log("Trovati processi server residui, terminazione in corso")
+                        log(getString(R.string.tech_server_residual))
                         val killCmd = ProcessBuilder("su", "-c", "pkill -9 -f 'java.*files/servers'").start()
                         killCmd.waitFor()
                         Thread.sleep(1500)
@@ -148,12 +149,12 @@ class MinecraftServerService : Service() {
                 else com.pcaudio.minecraft_server.core.TermuxBootstrap(this)
 
             if (!bootstrap.isInstalled()) {
-                log("Runtime Java non trovato, preparazione in corso...")
+                log(getString(R.string.tech_server_runtime_missing))
                 bootstrap.ensureRuntimeData { line -> log(line) }
             }
 
             if (!bootstrap.isInstalled()) {
-                log("Errore: runtime Java non disponibile dopo la preparazione")
+                log(getString(R.string.tech_server_runtime_error))
                 runningServerId = null
                 pushState(false)
                 if (wakeLock.isHeld) wakeLock.release()
@@ -193,20 +194,20 @@ class MinecraftServerService : Service() {
                 val innerCommand = command.joinToString(" ") { "\"$it\"" }
                 val fullShellCommand = "cd \"$serverDir\" && export LD_LIBRARY_PATH=\"${bootstrap.libraryDir().absolutePath}\" && export HOME=\"${bootstrap.homeDir().absolutePath}\" && $innerCommand"
                 pb = ProcessBuilder("su", "-c", fullShellCommand)
-                log("Avvio processo (root): $fullShellCommand")
+                log(getString(R.string.tech_server_process_root, fullShellCommand))
             } else {
                 pb = ProcessBuilder(command)
                 pb.directory(File(serverDir))
                 pb.environment()["LD_LIBRARY_PATH"] = bootstrap.libraryDir().absolutePath
                 pb.environment()["HOME"] = bootstrap.homeDir().absolutePath
-                log("Avvio processo: ${command.joinToString(" ")}")
+                log(getString(R.string.tech_server_process, command.joinToString(" ")))
             }
             pb.redirectErrorStream(true)
 
             serverProcess = try {
                 pb.start()
             } catch (e: Exception) {
-                log("Errore avvio processo: ${e.message}")
+                log(getString(R.string.tech_server_process_error, e.message))
                 runningServerId = null
                 pushState(false)
                 if (wakeLock.isHeld) wakeLock.release()
@@ -218,11 +219,11 @@ class MinecraftServerService : Service() {
             serverProcess?.inputStream?.bufferedReader()?.forEachLine { line ->
                 log(line)
                 if (line.contains("Done") && line.contains("For help")) {
-                    mainHandler.post { updateNotification("Server online") }
+                    mainHandler.post { updateNotification(getString(R.string.tech_server_online)) }
                 }
             }
             val exitCode = serverProcess?.waitFor() ?: -1
-            log("Processo terminato (codice $exitCode)")
+            log(getString(R.string.tech_server_exited, exitCode))
             runningServerId = null
             pushState(false)
             if (wakeLock.isHeld) wakeLock.release()
@@ -239,7 +240,7 @@ class MinecraftServerService : Service() {
                 pushLog("> $command")
             }
         } catch (e: Exception) {
-            pushLog("Errore invio comando: ${e.message}")
+            pushLog(getString(R.string.tech_server_command_error, e.message))
         }
     }
 
@@ -248,7 +249,7 @@ class MinecraftServerService : Service() {
         Thread {
             val exited = serverProcess?.waitFor(30, java.util.concurrent.TimeUnit.SECONDS) ?: true
             if (exited != true) {
-                pushLog("Il server non ha risposto allo stop, terminazione forzata")
+                pushLog(getString(R.string.tech_server_stop_no_response))
                 try {
                     ProcessBuilder("su", "-c", "pkill -f server.jar").start().waitFor()
                 } catch (e: Exception) {
@@ -276,7 +277,7 @@ class MinecraftServerService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "Server Minecraft", NotificationManager.IMPORTANCE_LOW)
+            val channel = NotificationChannel(CHANNEL_ID, getString(R.string.tech_server_channel_name), NotificationManager.IMPORTANCE_LOW)
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }

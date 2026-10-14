@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.pcaudio.minecraft_server.R
 import com.pcaudio.minecraft_server.core.CurseForgeApi
 import com.pcaudio.minecraft_server.core.ModCatalog
 import com.pcaudio.minecraft_server.core.ModLoader
@@ -54,8 +55,8 @@ class ModInstallService : Service() {
         val isUpdate = intent.getBooleanExtra(EXTRA_IS_UPDATE, false)
         val requiredDeps = intent.getStringArrayListExtra("required_deps") ?: arrayListOf()
 
-        val notificationTitle = if (isUpdate) "Aggiornamento: $modTitle" else "Installazione: $modTitle"
-        startForeground(NOTIF_ID, buildNotification(notificationTitle, "Download in corso...", 0, true))
+        val notificationTitle = if (isUpdate) getString(R.string.tech_mod_update_title, modTitle) else getString(R.string.tech_mod_install_title, modTitle)
+        startForeground(NOTIF_ID, buildNotification(notificationTitle, getString(R.string.tech_mod_downloading), 0, true))
 
         Thread {
             try {
@@ -68,7 +69,7 @@ class ModInstallService : Service() {
                     for (depProjectId in requiredDeps) {
                         if (tracker.isInstalled(depProjectId, "Modrinth")) continue
 
-                        updateNotification(notificationTitle, "Installazione dipendenza richiesta...", 10)
+                        updateNotification(notificationTitle, getString(R.string.tech_mod_dep_installing), 10)
                         try {
                             val depVersions = modrinth.getVersions(depProjectId, loader, minecraftVersion)
                             val depBest = depVersions.firstOrNull() ?: continue
@@ -82,11 +83,11 @@ class ModInstallService : Service() {
                     }
                 }
 
-                updateNotification(notificationTitle, "Download ${chosenFilename}...", 30)
+                updateNotification(notificationTitle, getString(R.string.tech_mod_download_file, chosenFilename), 30)
                 val modsDir = File(modsDirPath)
                 modsDir.mkdirs()
                 downloadFile(modsDir, chosenFilename, chosenDownloadUrl, sourceProvider, curseForgeKey) { percent ->
-                    updateNotification(notificationTitle, "Download $percent%", 30 + (percent * 0.7).toInt())
+                    updateNotification(notificationTitle, getString(R.string.tech_mod_download_percent, percent), 30 + (percent * 0.7).toInt())
                 }
 
                 tracker.recordInstall(projectId, sourceProvider, chosenFilename)
@@ -103,18 +104,18 @@ class ModInstallService : Service() {
                             try {
                                 val exitCode = ProcessBuilder("su", "-c", "rm -f '${oldFile.absolutePath}'").start().waitFor()
                                 if (exitCode != 0 || oldFile.exists()) {
-                                    notifyResult(false, modTitle, "Nuova versione installata, ma il file precedente $oldFilename non è stato eliminato. Eliminalo a mano dalla cartella mods, altrimenti il server caricherà la mod due volte.", isUpdate)
+                                    notifyResult(false, modTitle, getString(R.string.tech_mod_old_not_deleted, oldFilename), isUpdate)
                                     return@Thread
                                 }
                             } catch (e: Exception) {
-                                notifyResult(false, modTitle, "Nuova versione installata, ma il file precedente $oldFilename non è stato eliminato: ${e.message}", isUpdate)
+                                notifyResult(false, modTitle, getString(R.string.tech_mod_old_not_deleted_error, oldFilename, e.message), isUpdate)
                                 return@Thread
                             }
                         }
                     }
                 }
 
-                updateNotification(notificationTitle, "Completato", 100)
+                updateNotification(notificationTitle, getString(R.string.tech_mod_completed), 100)
                 notifyResult(true, modTitle, null, isUpdate)
             } catch (e: Exception) {
                 notifyResult(false, modTitle, e.message, isUpdate)
@@ -149,7 +150,7 @@ class ModInstallService : Service() {
         }
 
         val response = client.newCall(requestBuilder.build()).execute()
-        val body = response.body ?: throw IllegalStateException("Download fallito: nessuna risposta per $filename")
+        val body = response.body ?: throw IllegalStateException(getString(R.string.tech_mod_no_response, filename))
 
         val totalBytes = body.contentLength()
         var downloaded = 0L
@@ -170,11 +171,11 @@ class ModInstallService : Service() {
 
         if (totalBytes > 0 && downloaded != totalBytes) {
             temp.delete()
-            throw IllegalStateException("Download incompleto di $filename: ricevuti $downloaded byte su $totalBytes")
+            throw IllegalStateException(getString(R.string.tech_mod_incomplete, filename, downloaded, totalBytes))
         }
         if (downloaded < MIN_VALID_BYTES) {
             temp.delete()
-            throw IllegalStateException("Download sospetto di $filename: solo $downloaded byte ricevuti")
+            throw IllegalStateException(getString(R.string.tech_mod_suspicious, filename, downloaded))
         }
         if (target.exists()) target.delete()
 
@@ -185,11 +186,11 @@ class ModInstallService : Service() {
                 temp.delete()
             } catch (e: Exception) {
                 temp.delete()
-                throw IllegalStateException("Impossibile rinominare $filename.part in $filename: ${e.message}")
+                throw IllegalStateException(getString(R.string.tech_mod_rename_failed, filename, e.message))
             }
         }
         if (!target.exists() || target.length() < MIN_VALID_BYTES) {
-            throw IllegalStateException("File $filename non valido al termine del download")
+            throw IllegalStateException(getString(R.string.tech_mod_invalid, filename))
         }
     }
 
@@ -210,7 +211,7 @@ class ModInstallService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "Installazione mod", NotificationManager.IMPORTANCE_LOW)
+            val channel = NotificationChannel(CHANNEL_ID, getString(R.string.tech_mod_channel_name), NotificationManager.IMPORTANCE_LOW)
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }

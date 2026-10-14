@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.EditText
 import android.widget.LinearLayout
+import com.pcaudio.minecraft_server.R
 import com.pcaudio.minecraft_server.core.ApiKeyStore
 
 object ApiKeyDialogs {
@@ -14,23 +15,23 @@ object ApiKeyDialogs {
 
     fun showCurseForgeMissingKeyDialog(context: Context, onKeySaved: () -> Unit) {
         AlertDialog.Builder(context)
-            .setTitle("Chiave API CurseForge mancante")
-            .setMessage("Per cercare mod su CurseForge serve una chiave API gratuita personale. Puoi richiederla in pochi minuti sul portale ufficiale, poi inseriscila qui nell'app.")
-            .setPositiveButton("Richiedi chiave") { _, _ ->
+            .setTitle(context.getString(R.string.tech_cf_missing_title))
+            .setMessage(context.getString(R.string.tech_cf_missing_message))
+            .setPositiveButton(context.getString(R.string.tech_cf_request_key)) { _, _ ->
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(CURSEFORGE_CONSOLE_URL))
                 context.startActivity(intent)
                 showEnterKeyDialog(context, onKeySaved)
             }
-            .setNeutralButton("Ho già una chiave") { _, _ ->
+            .setNeutralButton(context.getString(R.string.tech_cf_have_key)) { _, _ ->
                 showEnterKeyDialog(context, onKeySaved)
             }
-            .setNegativeButton("Annulla", null)
+            .setNegativeButton(context.getString(R.string.tech_cancel), null)
             .show()
     }
 
     private fun showEnterKeyDialog(context: Context, onKeySaved: () -> Unit) {
         val input = EditText(context)
-        input.hint = "Incolla qui la tua API key"
+        input.hint = context.getString(R.string.tech_cf_hint)
 
         val container = LinearLayout(context)
         container.orientation = LinearLayout.VERTICAL
@@ -39,16 +40,16 @@ object ApiKeyDialogs {
         container.addView(input)
 
         AlertDialog.Builder(context)
-            .setTitle("Inserisci API key CurseForge")
+            .setTitle(context.getString(R.string.tech_cf_enter_title))
             .setView(container)
-            .setPositiveButton("Salva") { _, _ ->
+            .setPositiveButton(context.getString(R.string.tech_save)) { _, _ ->
                 val key = input.text.toString().trim()
                 if (key.isNotBlank()) {
                     ApiKeyStore(context).setCurseForgeKey(key)
                     onKeySaved()
                 }
             }
-            .setNegativeButton("Annulla", null)
+            .setNegativeButton(context.getString(R.string.tech_cancel), null)
             .show()
     }
 }

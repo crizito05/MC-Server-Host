@@ -3,6 +3,7 @@ package com.pcaudio.minecraft_server.core
 import android.content.Context
 import android.net.ConnectivityManager
 import android.util.Log
+import com.pcaudio.minecraft_server.R
 import java.io.File
 import java.io.FileWriter
 import java.net.InetAddress
@@ -53,7 +54,7 @@ class PlayitAgentManager(
             return false
         }
         if (!binaryFile.isFile) {
-            log("libplayitd.so non è presente nell'installazione: esegui Clean e Rebuild, poi reinstalla l'APK")
+            log(context.getString(R.string.tech_agent_binary_missing))
             return false
         }
         stop()
@@ -88,11 +89,11 @@ class PlayitAgentManager(
             builder.redirectOutput(ProcessBuilder.Redirect.appendTo(consoleFile))
             val started = builder.start()
             process = started
-            log("Agente playit avviato con UID " + uid)
+            log(context.getString(R.string.tech_agent_started_uid, uid))
             thread(started, onUnexpectedExit)
             true
         } catch (e: Exception) {
-            log("Impossibile avviare l'agente: " + e.message)
+            log(context.getString(R.string.tech_agent_launch_failed, e.message))
             removeRedirectRule()
             relay.stop()
             dnsRelay = null
@@ -110,7 +111,7 @@ class PlayitAgentManager(
                     current.destroyForcibly()
                 }
             } catch (e: Exception) {
-                log("Errore durante l'arresto dell'agente: " + e.message)
+                log(context.getString(R.string.tech_agent_stop_error, e.message))
             }
             killOrphanAgents()
         }
@@ -145,7 +146,7 @@ class PlayitAgentManager(
             }
             val removal = runRoot("rm -f " + entry.absolutePath)
             if (entry.exists()) {
-                log("Impossibile eliminare " + entry.absolutePath + ": " + removal.second)
+                log(context.getString(R.string.tech_agent_delete_failed, entry.absolutePath, removal.second))
                 ok = false
             }
         }
@@ -156,20 +157,20 @@ class PlayitAgentManager(
         return try {
             ApiKeyStore(context).getPlayitSecret() ?: ""
         } catch (e: Exception) {
-            log("Lettura del segreto non riuscita: " + e.message)
+            log(context.getString(R.string.tech_log_secret_read_failed, e.message))
             ""
         }
     }
 
     private fun secretProblem(secret: String): String? {
         if (secret.isBlank()) {
-            return "Segreto playit mancante"
+            return context.getString(R.string.tech_secret_missing_short)
         }
         if (!secret.all { it in "0123456789abcdefABCDEF" }) {
-            return "Il segreto playit deve essere esadecimale"
+            return context.getString(R.string.tech_secret_not_hex)
         }
         if (secret.length % 2 != 0) {
-            return "Il segreto playit ha lunghezza dispari"
+            return context.getString(R.string.tech_secret_odd_length)
         }
         return null
     }
@@ -180,7 +181,7 @@ class PlayitAgentManager(
             secretFile.writeText("secret_key = \"" + secret + "\"\n")
             true
         } catch (e: Exception) {
-            log("Impossibile scrivere " + secretFile.absolutePath + ": " + e.message)
+            log(context.getString(R.string.tech_file_write_failed, secretFile.absolutePath, e.message))
             false
         }
     }
@@ -192,7 +193,7 @@ class PlayitAgentManager(
             val linkProperties = manager.getLinkProperties(manager.activeNetwork)
             linkProperties?.dnsServers?.forEach { resolvers.add(it) }
         } catch (e: Exception) {
-            log("Lettura dei DNS dalla rete attiva non riuscita: " + e.message)
+            log(context.getString(R.string.tech_dns_read_failed, e.message))
         }
         for (index in 1..4) {
             try {
@@ -208,9 +209,9 @@ class PlayitAgentManager(
         if (resolvers.isEmpty()) {
             resolvers.add(InetAddress.getByName(DNS_FALLBACK_PRIMARY))
             resolvers.add(InetAddress.getByName(DNS_FALLBACK_SECONDARY))
-            log("Nessun DNS di rete trovato: uso " + DNS_FALLBACK_PRIMARY + " e " + DNS_FALLBACK_SECONDARY)
+            log(context.getString(R.string.tech_dns_fallback, DNS_FALLBACK_PRIMARY, DNS_FALLBACK_SECONDARY))
         } else {
-            log("DNS di rete: " + resolvers.joinToString { it.hostAddress ?: "?" })
+            log(context.getString(R.string.tech_dns_network, resolvers.joinToString { it.hostAddress ?: "?" }))
         }
         return resolvers.toList()
     }
@@ -225,12 +226,12 @@ class PlayitAgentManager(
         }
         val add = runRoot(redirectRuleSpec(true))
         if (!add.first) {
-            log("Impossibile installare la regola DNS con i permessi di root: " + add.second)
-            log("Senza root l'agente non risolverà i nomi: serve Magisk attivo almeno al primo avvio")
+            log(context.getString(R.string.tech_dns_rule_failed, add.second))
+            log(context.getString(R.string.tech_dns_root_needed))
             return false
         }
         redirectRuleActive = true
-        log("Regola DNS installata per UID " + uid + " verso la porta " + REDIRECT_PORT)
+        log(context.getString(R.string.tech_dns_rule_installed, uid, REDIRECT_PORT))
         return true
     }
 
@@ -249,13 +250,13 @@ class PlayitAgentManager(
             val finished = rootProcess.waitFor(ROOT_COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             if (!finished) {
                 rootProcess.destroyForcibly()
-                false to ("timeout di " + ROOT_COMMAND_TIMEOUT_SECONDS + "s")
+                false to context.getString(R.string.tech_root_timeout, ROOT_COMMAND_TIMEOUT_SECONDS)
             } else {
                 val output = rootProcess.inputStream.bufferedReader().readText().trim()
                 (rootProcess.exitValue() == 0) to output
             }
         } catch (e: Exception) {
-            false to (e.message ?: "errore sconosciuto")
+            false to (e.message ?: context.getString(R.string.tech_unknown_error))
         }
     }
 
@@ -278,9 +279,9 @@ class PlayitAgentManager(
             }
             try {
                 android.os.Process.killProcess(pid)
-                log("Processo agente residuo terminato: " + pid)
+                log(context.getString(R.string.tech_orphan_killed, pid))
             } catch (e: Exception) {
-                log("Impossibile terminare il processo residuo " + pid + ": " + e.message)
+                log(context.getString(R.string.tech_orphan_kill_failed, pid, e.message))
             }
         }
     }

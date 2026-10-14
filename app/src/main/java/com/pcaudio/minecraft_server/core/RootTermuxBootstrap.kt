@@ -2,6 +2,7 @@ package com.pcaudio.minecraft_server.core
 
 import android.content.Context
 import android.os.Build
+import com.pcaudio.minecraft_server.R
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -32,7 +33,7 @@ class RootTermuxBootstrap(private val context: Context, private val jdkMajor: In
 
     override fun ensureRuntimeData(onProgress: (String) -> Unit) {
         if (isInstalled()) {
-            onProgress("Runtime Java (root) già presente")
+            onProgress(context.getString(R.string.tech_runtime_present))
             return
         }
         remountExec(onProgress)
@@ -51,12 +52,12 @@ class RootTermuxBootstrap(private val context: Context, private val jdkMajor: In
     }
 
     fun remountExec(onProgress: (String) -> Unit) {
-        onProgress("Remount partizione con permesso di esecuzione")
+        onProgress(context.getString(R.string.tech_remount))
         try {
             val dataPath = context.filesDir.absolutePath
             runAsRoot("mount -o remount,exec \"$dataPath\"")
         } catch (e: Exception) {
-            onProgress("Remount fallito: ${e.message}")
+            onProgress(context.getString(R.string.tech_remount_failed, e.message))
         }
     }
 
@@ -67,7 +68,7 @@ class RootTermuxBootstrap(private val context: Context, private val jdkMajor: In
             "armeabi-v7a" -> "arm"
             "x86_64" -> "x86_64"
             "x86" -> "i686"
-            else -> throw IllegalStateException("ABI non supportata: $abi")
+            else -> throw IllegalStateException(context.getString(R.string.tech_abi_unsupported, abi))
         }
     }
 
@@ -78,10 +79,10 @@ class RootTermuxBootstrap(private val context: Context, private val jdkMajor: In
     }
 
     private fun downloadBootstrap(onProgress: (String) -> Unit): File {
-        onProgress("Download runtime Java")
+        onProgress(context.getString(R.string.tech_download_java))
         val request = Request.Builder().url(bootstrapUrl()).build()
         val response = client.newCall(request).execute()
-        val body = response.body ?: throw IllegalStateException("Download fallito")
+        val body = response.body ?: throw IllegalStateException(context.getString(R.string.tech_download_failed))
 
         val totalBytes = body.contentLength()
         val debFile = File(context.cacheDir, "openjdk.deb")
@@ -103,31 +104,31 @@ class RootTermuxBootstrap(private val context: Context, private val jdkMajor: In
                             lastReportedPercent = percent
                             val mbDownloaded = downloadedBytes / (1024 * 1024)
                             val mbTotal = totalBytes / (1024 * 1024)
-                            onProgress("Download runtime Java: $percent% (${mbDownloaded}MB / ${mbTotal}MB)")
+                            onProgress(context.getString(R.string.tech_download_progress, percent, mbDownloaded, mbTotal))
                         }
                     }
                 }
             }
         }
 
-        onProgress("Download completato (${downloadedBytes / (1024 * 1024)}MB)")
+        onProgress(context.getString(R.string.tech_download_done, downloadedBytes / (1024 * 1024)))
 
         if (downloadedBytes < 1024 * 1024) {
-            throw IllegalStateException("Download sospetto: solo $downloadedBytes byte ricevuti. URL probabilmente non valido: ${bootstrapUrl()}")
+            throw IllegalStateException(context.getString(R.string.tech_download_suspicious, downloadedBytes, bootstrapUrl()))
         }
 
         return debFile
     }
 
     private fun extractAndInstall(debFile: File, onProgress: (String) -> Unit) {
-        onProgress("Estrazione pacchetto")
+        onProgress(context.getString(R.string.tech_extract_package))
         prefixDir.mkdirs()
 
         val extractor = DebExtractor()
         val workDir = context.cacheDir
 
         val dataTarXz = extractor.extractDataTarXz(debFile, workDir)
-        onProgress("Archivio dati estratto, decompressione JDK")
+        onProgress(context.getString(R.string.tech_extract_data))
 
         extractor.extractTarXz(
             tarXzFile = dataTarXz,
@@ -136,17 +137,17 @@ class RootTermuxBootstrap(private val context: Context, private val jdkMajor: In
         )
 
         dataTarXz.delete()
-        onProgress("JDK estratto in ${prefixDir.absolutePath}")
+        onProgress(context.getString(R.string.tech_jdk_extracted, prefixDir.absolutePath))
     }
 
     private fun installExtraLibrary(packageName: String, version: String, poolPrefix: String, onProgress: (String) -> Unit) {
         val javaLibDir = File(prefixDir, "lib/jvm/${JdkVersionResolver.javaHomeDirName(jdkMajor)}/lib")
 
-        onProgress("Download $packageName")
+        onProgress(context.getString(R.string.tech_download_named, packageName))
         val url = "https://packages.termux.dev/apt/termux-main/pool/main/$poolPrefix/$packageName/${packageName}_${version}_${currentArch()}.deb"
         val request = Request.Builder().url(url).build()
         val response = client.newCall(request).execute()
-        val body = response.body ?: throw IllegalStateException("Download $packageName fallito")
+        val body = response.body ?: throw IllegalStateException(context.getString(R.string.tech_download_named_failed, packageName))
 
         val debFile = File(context.cacheDir, "$packageName.deb")
         var downloadedBytes = 0L
@@ -157,7 +158,7 @@ class RootTermuxBootstrap(private val context: Context, private val jdkMajor: In
         }
 
         if (downloadedBytes < 1024) {
-            throw IllegalStateException("Download sospetto per $packageName: solo $downloadedBytes byte. URL: $url")
+            throw IllegalStateException(context.getString(R.string.tech_download_suspicious_named, packageName, downloadedBytes, url))
         }
 
         val extractor = DebExtractor()
@@ -176,7 +177,7 @@ class RootTermuxBootstrap(private val context: Context, private val jdkMajor: In
         for (libFile in libraryFiles) {
             libFile.copyTo(File(javaLibDir, libFile.name), overwrite = true)
             File(javaLibDir, libFile.name).setExecutable(true)
-            onProgress("Installata: ${libFile.name} (${libFile.length()} byte)")
+            onProgress(context.getString(R.string.tech_installed, libFile.name, libFile.length()))
 
             for (variantName in generateVersionVariants(libFile.name)) {
                 if (variantName != libFile.name) {
@@ -187,7 +188,7 @@ class RootTermuxBootstrap(private val context: Context, private val jdkMajor: In
         }
 
         if (libraryFiles.isEmpty()) {
-            onProgress("ATTENZIONE: nessuna libreria trovata in $packageName")
+            onProgress(context.getString(R.string.tech_no_library, packageName))
         }
 
         debFile.delete()
@@ -216,7 +217,7 @@ class RootTermuxBootstrap(private val context: Context, private val jdkMajor: In
     }
 
     private fun fixPermissions(onProgress: (String) -> Unit) {
-        onProgress("Impostazione permessi esecuzione")
+        onProgress(context.getString(R.string.tech_permissions))
         runAsRoot("chmod -R 755 ${prefixDir.absolutePath}")
     }
 }
