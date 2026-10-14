@@ -35,7 +35,7 @@
                 android:layout_height="18dp"
                 android:layout_marginStart="6dp"
                 android:visibility="gone"
-                android:contentDescription="Versione bloccata"
+                android:contentDescription="@string/installedrow_locked"
                 android:src="@drawable/ic_mod_locked" />
 
         </LinearLayout>
@@ -61,7 +61,7 @@
         android:layout_height="44dp"
         android:layout_marginStart="8dp"
         android:visibility="gone"
-        android:contentDescription="Aggiorna questa mod"
+        android:contentDescription="@string/installedrow_update_this"
         android:src="@drawable/ic_mod_update"
         android:background="?android:attr/selectableItemBackgroundBorderless" />
 
@@ -70,6 +70,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:text="Rimuovi" />
+        android:text="@string/installedrow_remove" />
 
 </LinearLayout>

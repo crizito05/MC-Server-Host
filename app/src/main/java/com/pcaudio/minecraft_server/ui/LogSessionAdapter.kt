@@ -16,8 +16,6 @@ class LogSessionAdapter(
     private val onDelete: (File) -> Unit
 ) : RecyclerView.Adapter<LogSessionAdapter.LogViewHolder>() {
 
-    private val analyzer = LogAnalyzer()
-
     class LogViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val date: TextView = view.findViewById(R.id.textLogDate)
         val summary: TextView = view.findViewById(R.id.textLogSummary)
@@ -35,7 +33,7 @@ class LogSessionAdapter(
         holder.date.text = file.name.removePrefix("session_").removeSuffix(".log").replace("_", " ")
 
         val content = try { file.readText() } catch (e: Exception) { "" }
-        holder.summary.text = analyzer.summarize(content)
+        holder.summary.text = LogAnalyzer(holder.itemView.context.resources).summarize(content)
 
         holder.view.setOnClickListener { onView(file) }
         holder.delete.setOnClickListener { onDelete(file) }

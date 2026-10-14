@@ -12,7 +12,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Impostazioni rapide"
+            android:text="@string/props_quick"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -22,7 +22,7 @@
             android:layout_marginTop="4dp"
             android:layout_marginBottom="12dp"
             android:textSize="12sp"
-            android:text="Le modifiche hanno effetto al prossimo avvio del server." />
+            android:text="@string/props_quick_note" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -33,7 +33,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Whitelist attiva"
+                android:text="@string/props_whitelist"
                 android:gravity="center_vertical" />
             <Switch
                 android:id="@+id/switchWhitelist"
@@ -50,7 +50,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="PvP abilitato"
+                android:text="@string/props_pvp"
                 android:gravity="center_vertical" />
             <Switch
                 android:id="@+id/switchPvp"
@@ -67,7 +67,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Online mode (verifica account Microsoft)"
+                android:text="@string/props_online"
                 android:gravity="center_vertical" />
             <Switch
                 android:id="@+id/switchOnlineMode"
@@ -79,7 +79,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Difficoltà" />
+            android:text="@string/props_difficulty" />
         <Spinner
             android:id="@+id/spinnerDifficulty"
             android:layout_width="match_parent"
@@ -89,7 +89,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Modalità di gioco" />
+            android:text="@string/props_gamemode" />
         <Spinner
             android:id="@+id/spinnerGamemode"
             android:layout_width="match_parent"
@@ -99,7 +99,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Numero massimo giocatori" />
+            android:text="@string/props_max_players" />
         <EditText
             android:id="@+id/inputMaxPlayers"
             android:layout_width="match_parent"
@@ -110,7 +110,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Distanza di visuale (chunk)" />
+            android:text="@string/props_view_distance" />
         <EditText
             android:id="@+id/inputViewDistance"
             android:layout_width="match_parent"
@@ -121,7 +121,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Messaggio del giorno (MOTD)" />
+            android:text="@string/props_motd" />
         <EditText
             android:id="@+id/inputMotd"
             android:layout_width="match_parent"
@@ -132,7 +132,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Applica al testo sottostante" />
+            android:text="@string/props_apply" />
 
         <View
             android:layout_width="match_parent"
@@ -144,7 +144,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Avanzate (file completo)"
+            android:text="@string/props_advanced"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -154,7 +154,7 @@
             android:layout_marginTop="4dp"
             android:layout_marginBottom="8dp"
             android:textSize="12sp"
-            android:text="Modifica direttamente qualsiasi proprietà, incluse quelle non elencate sopra." />
+            android:text="@string/props_advanced_note" />
 
         <EditText
             android:id="@+id/inputRawProperties"
@@ -173,7 +173,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Salva" />
+            android:text="@string/edit_save" />
 
     </LinearLayout>
 </ScrollView>

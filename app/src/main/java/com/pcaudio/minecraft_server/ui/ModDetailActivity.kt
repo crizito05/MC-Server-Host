@@ -66,7 +66,7 @@ class ModDetailActivity : AppCompatActivity() {
         )
 
         findViewById<TextView>(R.id.textDetailTitle).text = modTitle
-        findViewById<TextView>(R.id.textDetailDownloads).text = "$downloads download · $sourceProvider"
+        findViewById<TextView>(R.id.textDetailDownloads).text = getString(R.string.moddetail_downloads, downloads, sourceProvider)
 
         scrollDescription = findViewById(R.id.scrollDescription)
         recyclerVersions = findViewById(R.id.recyclerVersions)
@@ -96,12 +96,12 @@ class ModDetailActivity : AppCompatActivity() {
     }
 
     private fun loadDescription() {
-        textDescriptionContent.text = "Caricamento descrizione..."
+        textDescriptionContent.text = getString(R.string.moddetail_loading_description)
         Thread {
             val description = try {
                 catalog.getDescription(sourceProvider, projectId)
             } catch (e: Exception) {
-                "Descrizione non disponibile"
+                getString(R.string.moddetail_no_description)
             }
             runOnUiThread { textDescriptionContent.text = description }
         }.start()
@@ -121,7 +121,7 @@ class ModDetailActivity : AppCompatActivity() {
 
     private fun installLatest() {
         if (loadedVersions.isEmpty()) {
-            Toast.makeText(this, "Versioni non ancora caricate, riprova tra poco", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.moddetail_versions_not_loaded, Toast.LENGTH_SHORT).show()
             return
         }
         confirmInstall(loadedVersions.first())
@@ -138,7 +138,7 @@ class ModDetailActivity : AppCompatActivity() {
             runOnUiThread {
                 val warningView = findViewById<TextView>(R.id.textEnvironmentWarning)
                 if (serverSide == "unsupported") {
-                    warningView.text = "⚠ Questa mod è solo lato client, non ha effetto su un server dedicato"
+                    warningView.text = getString(R.string.moddetail_client_only)
                     warningView.visibility = View.VISIBLE
                 }
             }
@@ -167,9 +167,9 @@ class ModDetailActivity : AppCompatActivity() {
         }
 
         val depsMsg = if (versionFile.requiredDependencyProjectIds.isNotEmpty()) {
-            " (verranno installate anche ${versionFile.requiredDependencyProjectIds.size} dipendenze richieste)"
+            " " + getString(R.string.moddetail_deps_suffix, versionFile.requiredDependencyProjectIds.size)
         } else ""
-        Toast.makeText(this, "Installazione di $modTitle avviata$depsMsg", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.moddetail_install_started, modTitle) + depsMsg, Toast.LENGTH_SHORT).show()
         finish()
     }
 }

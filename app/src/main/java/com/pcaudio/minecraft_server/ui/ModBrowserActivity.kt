@@ -41,11 +41,11 @@ class ModBrowserActivity : AppCompatActivity() {
         runOnUiThread {
             if (success) {
                 adapter.notifyDataSetChanged()
-                val message = if (isUpdate) "$modTitle aggiornata" else "$modTitle installata"
+                val message = if (isUpdate) getString(R.string.modbrowser_toast_updated, modTitle) else getString(R.string.modbrowser_toast_installed, modTitle)
                 android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
             } else {
-                val action = if (isUpdate) "aggiornamento" else "installazione"
-                android.widget.Toast.makeText(this, "Errore $action $modTitle: $error", android.widget.Toast.LENGTH_LONG).show()
+                val message = if (isUpdate) getString(R.string.modbrowser_error_update, modTitle, error) else getString(R.string.modbrowser_error_install, modTitle, error)
+                android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -66,7 +66,7 @@ class ModBrowserActivity : AppCompatActivity() {
         loader = config.loader
         minecraftVersion = config.minecraftVersion
         tracker = InstalledModsTracker(serverDir)
-        title = "Mod per ${config.name}"
+        title = getString(R.string.modbrowser_title, config.name)
 
         val apiKeyStore = ApiKeyStore(this)
         val curseForgeKey = apiKeyStore.getCurseForgeKey()
@@ -126,7 +126,7 @@ class ModBrowserActivity : AppCompatActivity() {
             return
         }
 
-        textEmptyResults.text = "Caricamento..."
+        textEmptyResults.text = getString(R.string.ui_loading)
         textEmptyResults.visibility = View.VISIBLE
         recyclerMods.visibility = View.GONE
 
@@ -139,7 +139,7 @@ class ModBrowserActivity : AppCompatActivity() {
 
             runOnUiThread {
                 if (results.isEmpty()) {
-                    textEmptyResults.text = "Nessun risultato trovato per questa combinazione di versione e loader"
+                    textEmptyResults.text = getString(R.string.modbrowser_no_results)
                     textEmptyResults.visibility = View.VISIBLE
                     recyclerMods.visibility = View.GONE
                 } else {

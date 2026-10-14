@@ -1,5 +1,6 @@
 package com.pcaudio.minecraft_server.ui
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -38,11 +39,12 @@ class InstalledModAdapter(
     override fun onBindViewHolder(holder: ModViewHolder, position: Int) {
         val entry = entries[position]
         val file = entry.file
+        val context = holder.itemView.context
         holder.name.text = file.name
-        holder.size.text = "${file.length() / 1024} KB · ${entry.sourceProvider ?: "origine non registrata"}"
+        holder.size.text = "${file.length() / 1024} KB · ${entry.sourceProvider ?: context.getString(R.string.installedrow_source_unregistered)}"
         holder.lock.visibility = if (entry.locked) View.VISIBLE else View.GONE
         holder.update.visibility = if (entry.status == ModUpdateChecker.STATUS_UPDATE_AVAILABLE) View.VISIBLE else View.GONE
-        holder.status.text = statusText(entry)
+        holder.status.text = statusText(context, entry)
         holder.update.setOnClickListener { onUpdate(entry) }
         holder.remove.setOnClickListener { onRemove(file) }
         holder.root.setOnLongClickListener {
@@ -51,14 +53,14 @@ class InstalledModAdapter(
         }
     }
 
-    private fun statusText(entry: ModUpdateEntry): String {
+    private fun statusText(context: Context, entry: ModUpdateEntry): String {
         return when (entry.status) {
             ModUpdateChecker.STATUS_UPDATE_AVAILABLE ->
-                "Aggiornamento disponibile: ${entry.newest?.versionNumber ?: ""}"
-            ModUpdateChecker.STATUS_UP_TO_DATE -> "Aggiornata"
+                context.getString(R.string.installedrow_update_available, entry.newest?.versionNumber ?: "")
+            ModUpdateChecker.STATUS_UP_TO_DATE -> context.getString(R.string.installedrow_up_to_date)
             ModUpdateChecker.STATUS_BLOCKED ->
-                "Versione bloccata · disponibile ${entry.newest?.versionNumber ?: ""}"
-            else -> "Aggiornamenti non verificabili"
+                context.getString(R.string.installedrow_blocked, entry.newest?.versionNumber ?: "")
+            else -> context.getString(R.string.installedrow_not_checkable)
         }
     }
 

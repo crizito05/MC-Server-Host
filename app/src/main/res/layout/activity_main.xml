@@ -9,26 +9,26 @@
         android:id="@+id/buttonNewServer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Nuovo server"
+        android:text="@string/main_new_server"
         android:layout_marginBottom="8dp" />
 
     <Button
         android:id="@+id/buttonNetwork"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Connessione dall'esterno" />
+        android:text="@string/main_network" />
 
     <Button
         android:id="@+id/buttonInstallLogs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Log di installazione" />
+        android:text="@string/main_install_logs" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Puoi tenere acceso un solo server alla volta, per stabilità e compatibilità"
+        android:text="@string/main_single_server_note"
         android:textSize="11sp"
         android:gravity="center"
         android:layout_marginTop="4dp"
@@ -38,7 +38,7 @@
         android:id="@+id/textEmptyState"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Nessun server creato"
+        android:text="@string/main_empty"
         android:gravity="center"
         android:layout_marginTop="32dp" />
 

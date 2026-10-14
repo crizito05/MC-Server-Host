@@ -26,7 +26,7 @@
             android:ellipsize="end"
             android:textSize="13sp"
             android:gravity="center"
-            android:text="Verifica aggiornamenti" />
+            android:text="@string/installed_button_check" />
 
         <Button
             android:id="@+id/buttonUpdateAll"
@@ -43,7 +43,7 @@
             android:textSize="13sp"
             android:gravity="center"
             android:enabled="false"
-            android:text="Aggiorna tutto" />
+            android:text="@string/installed_button_update_all" />
 
     </LinearLayout>
 
@@ -51,7 +51,7 @@
         android:id="@+id/textEmptyInstalled"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Nessuna mod installata"
+        android:text="@string/installed_empty"
         android:gravity="center"
         android:layout_marginTop="32dp" />
 

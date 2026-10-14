@@ -55,7 +55,7 @@ class ServerDetailActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.textDetailName).text = server.name
         val loaderLabel = if (server.loaderVersion != null) "${server.loader.name} ${server.loaderVersion}" else server.loader.name
-        findViewById<TextView>(R.id.textDetailInfo).text = "${server.minecraftVersion} · $loaderLabel · ${server.ramMb}MB RAM"
+        findViewById<TextView>(R.id.textDetailInfo).text = getString(R.string.detail_info, server.minecraftVersion, loaderLabel, server.ramMb)
 
         textConsole = findViewById(R.id.textConsole)
         consoleScroll = findViewById(R.id.consoleScroll)
@@ -65,9 +65,9 @@ class ServerDetailActivity : AppCompatActivity() {
 
         textTunnelAddress.setOnClickListener {
             if (tunnelAddress.isNotBlank()) {
-                showCopiableDialog("Indirizzo del server", tunnelAddress, "Indirizzo copiato")
+                showCopiableDialog(getString(R.string.detail_address_title), tunnelAddress, getString(R.string.copy_address_toast))
             } else if (tunnelAddressProblem.isNotBlank()) {
-                showCopiableDialog("Indirizzo non disponibile", tunnelAddressProblem, "Testo copiato")
+                showCopiableDialog(getString(R.string.detail_address_problem_title), tunnelAddressProblem, getString(R.string.copy_text_toast))
             }
         }
 
@@ -130,10 +130,10 @@ class ServerDetailActivity : AppCompatActivity() {
     override fun onBackPressed() {
         if (MinecraftServerService.isRunning(server.id)) {
             androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Server ancora acceso")
-                .setMessage("Il server è ancora in esecuzione. Uscendo ora, il processo continuerà a girare in background finché non lo fermi. Vuoi uscire comunque?")
-                .setPositiveButton("Esci comunque") { _, _ -> super.onBackPressed() }
-                .setNegativeButton("Resta qui", null)
+                .setTitle(getString(R.string.detail_running_title))
+                .setMessage(getString(R.string.detail_running_message))
+                .setPositiveButton(getString(R.string.detail_leave_anyway)) { _, _ -> super.onBackPressed() }
+                .setNegativeButton(getString(R.string.detail_stay), null)
                 .show()
         } else {
             super.onBackPressed()
@@ -151,7 +151,7 @@ class ServerDetailActivity : AppCompatActivity() {
                     val usable = tunnels.map { it.displayAddress }.filter { it.isNotBlank() }
                     val first = usable.firstOrNull()
                     if (first == null) {
-                        problem = "Nessun tunnel playit con indirizzo assegnato: controlla Connessione dall'esterno"
+                        problem = getString(R.string.detail_no_tunnel)
                     } else {
                         address = first
                     }
@@ -168,7 +168,7 @@ class ServerDetailActivity : AppCompatActivity() {
                     textTunnelAddress.text = finalAddress
                     textTunnelAddress.visibility = View.VISIBLE
                 } else if (finalProblem.isNotBlank()) {
-                    textTunnelAddress.text = "indirizzo non disponibile"
+                    textTunnelAddress.text = getString(R.string.detail_address_unavailable)
                     textTunnelAddress.visibility = View.VISIBLE
                 } else {
                     textTunnelAddress.visibility = View.GONE
@@ -187,12 +187,12 @@ class ServerDetailActivity : AppCompatActivity() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle(title)
             .setView(box)
-            .setPositiveButton("Copia") { _, _ ->
+            .setPositiveButton(getString(R.string.common_copy)) { _, _ ->
                 val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(ClipData.newPlainText("server_info", body))
                 Toast.makeText(this, toastText, Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("Chiudi", null)
+            .setNegativeButton(getString(R.string.common_close), null)
             .show()
     }
 
@@ -235,6 +235,6 @@ class ServerDetailActivity : AppCompatActivity() {
     }
 
     private fun updateStartStopButton(running: Boolean) {
-        buttonStartStop.text = if (running) "Ferma" else "Avvia"
+        buttonStartStop.text = if (running) getString(R.string.common_stop) else getString(R.string.common_start)
     }
 }

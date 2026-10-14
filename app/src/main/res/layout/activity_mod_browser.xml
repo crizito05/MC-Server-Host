@@ -15,13 +15,13 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Cerca mod..." />
+            android:hint="@string/modbrowser_hint_search" />
 
         <Button
             android:id="@+id/buttonSearch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Cerca" />
+            android:text="@string/modbrowser_button_search" />
 
     </LinearLayout>
 
@@ -37,7 +37,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Modrinth"
+            android:text="@string/modbrowser_provider_modrinth"
             android:checked="true" />
 
         <RadioButton
@@ -45,7 +45,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="CurseForge" />
+            android:text="@string/modbrowser_provider_curseforge" />
 
     </RadioGroup>
 
@@ -53,7 +53,7 @@
         android:id="@+id/textEmptyResults"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Cerca una mod per iniziare"
+        android:text="@string/modbrowser_empty_prompt"
         android:gravity="center"
         android:layout_marginTop="32dp" />
 

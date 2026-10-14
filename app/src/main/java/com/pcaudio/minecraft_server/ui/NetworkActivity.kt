@@ -59,7 +59,7 @@ class NetworkActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_network)
-        title = "Connessione dall'esterno"
+        title = getString(R.string.network_title)
 
         keyStore = ApiKeyStore(this)
         agentManager = PlayitAgentManager(this)
@@ -117,7 +117,7 @@ class NetworkActivity : AppCompatActivity() {
             return
         }
         if (TunnelService.isAgentRunning) {
-            Toast.makeText(this, "Ferma l'agente prima di sostituire il segreto", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.network_stop_before_replace_toast, Toast.LENGTH_SHORT).show()
             return
         }
         claimActive = true
@@ -125,13 +125,13 @@ class NetworkActivity : AppCompatActivity() {
         buttonSaveSecret.isEnabled = false
         val code = PlayitClaimApi().generateCode()
         val url = PlayitClaimApi().claimUrl(code)
-        textStatus.text = "Attivazione in corso: apri la pagina nel browser"
-        appendLog("Codice di attivazione: " + code)
-        appendLog("Pagina da approvare: " + url)
+        textStatus.text = getString(R.string.network_claim_status_open)
+        appendLog(getString(R.string.network_claim_log_code, code))
+        appendLog(getString(R.string.network_claim_log_page, url))
         try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (e: Exception) {
-            appendLog("Impossibile aprire il browser: " + e.message)
+            appendLog(getString(R.string.network_browser_error, e.message ?: getString(R.string.unknown_error)))
             finishClaim()
             return
         }
@@ -144,8 +144,8 @@ class NetworkActivity : AppCompatActivity() {
         var accepted = false
         while (claimActive && !accepted) {
             if (System.currentTimeMillis() > setupDeadline) {
-                claimLog("Attivazione scaduta: premi di nuovo il pulsante per riprovare")
-                runOnUiThread { textStatus.text = "Attivazione scaduta" }
+                claimLog(getString(R.string.network_claim_expired_log))
+                runOnUiThread { textStatus.text = getString(R.string.network_claim_expired_status) }
                 finishClaim()
                 return
             }
@@ -154,32 +154,32 @@ class NetworkActivity : AppCompatActivity() {
                 if (state == "useraccepted") {
                     accepted = true
                 } else if (state == "userrejected") {
-                    claimLog("Attivazione rifiutata nel browser")
-                    runOnUiThread { textStatus.text = "Attivazione rifiutata nel browser" }
+                    claimLog(getString(R.string.network_claim_rejected))
+                    runOnUiThread { textStatus.text = getString(R.string.network_claim_rejected) }
                     finishClaim()
                     return
                 } else if (state == "waitingforuser") {
-                    runOnUiThread { textStatus.text = "Attivazione in corso: approva nel browser" }
+                    runOnUiThread { textStatus.text = getString(R.string.network_claim_waiting) }
                     SystemClock.sleep(500)
                 } else {
-                    runOnUiThread { textStatus.text = "Attivazione in corso: apri la pagina nel browser" }
+                    runOnUiThread { textStatus.text = getString(R.string.network_claim_status_open) }
                     SystemClock.sleep(500)
                 }
             } catch (e: Exception) {
-                claimLog("Contatto con playit.gg temporaneamente non riuscito: " + e.message)
+                claimLog(getString(R.string.network_contact_error, e.message ?: getString(R.string.unknown_error)))
                 SystemClock.sleep(2000)
             }
         }
         if (!accepted) {
             return
         }
-        claimLog("Programma approvato: recupero del segreto in corso")
-        runOnUiThread { textStatus.text = "Recupero del segreto in corso" }
+        claimLog(getString(R.string.network_claim_approved_log))
+        runOnUiThread { textStatus.text = getString(R.string.network_secret_retrieving) }
         val exchangeDeadline = System.currentTimeMillis() + 60000L
         while (claimActive) {
             if (System.currentTimeMillis() > exchangeDeadline) {
-                claimLog("Recupero del segreto scaduto: premi di nuovo il pulsante per riprovare")
-                runOnUiThread { textStatus.text = "Recupero del segreto scaduto" }
+                claimLog(getString(R.string.network_secret_retrieval_expired_log))
+                runOnUiThread { textStatus.text = getString(R.string.network_secret_retrieval_expired_status) }
                 finishClaim()
                 return
             }
@@ -190,7 +190,7 @@ class NetworkActivity : AppCompatActivity() {
                     return
                 }
             } catch (e: Exception) {
-                claimLog("Recupero del segreto non riuscito: " + e.message)
+                claimLog(getString(R.string.network_secret_retrieval_failed_log, e.message ?: getString(R.string.unknown_error)))
                 finishClaim()
                 return
             }
@@ -202,7 +202,7 @@ class NetworkActivity : AppCompatActivity() {
     private fun applyClaimedSecret(secret: String) {
         val problem = secretProblem(secret)
         if (problem != null) {
-            claimLog("Il segreto ricevuto non è valido: " + problem)
+            claimLog(getString(R.string.network_secret_received_invalid_log, problem))
             finishClaim()
             return
         }
@@ -212,8 +212,8 @@ class NetworkActivity : AppCompatActivity() {
             secretInputUnlocked = false
             inputSecret.setText("")
             applySecretUiState()
-            textStatus.text = "Segreto salvato automaticamente"
-            Toast.makeText(this, "Segreto salvato automaticamente", Toast.LENGTH_SHORT).show()
+            textStatus.text = getString(R.string.network_secret_saved_auto)
+            Toast.makeText(this, R.string.network_secret_saved_auto, Toast.LENGTH_SHORT).show()
             finishClaim()
             loadTunnels()
         }
@@ -243,22 +243,22 @@ class NetworkActivity : AppCompatActivity() {
         val secret = inputSecret.text.toString().trim()
 
         if (secret.isBlank()) {
-            Toast.makeText(this, "Incolla il segreto dell'agente playit.gg", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.network_secret_empty_toast, Toast.LENGTH_SHORT).show()
             return
         }
 
         val problem = secretProblem(secret)
         if (problem != null) {
             AlertDialog.Builder(this)
-                .setTitle("Questo non è il segreto dell'agente")
+                .setTitle(R.string.network_secret_invalid_title)
                 .setMessage(problem)
-                .setPositiveButton("Ho capito", null)
+                .setPositiveButton(R.string.ui_understood, null)
                 .show()
             return
         }
 
         if (TunnelService.isAgentRunning) {
-            Toast.makeText(this, "Ferma l'agente prima di cambiare il segreto", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.network_stop_before_change_toast, Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -267,25 +267,25 @@ class NetworkActivity : AppCompatActivity() {
         secretInputUnlocked = false
         inputSecret.setText("")
         applySecretUiState()
-        Toast.makeText(this, "Segreto salvato sul dispositivo", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, R.string.network_secret_saved_local, Toast.LENGTH_SHORT).show()
         loadTunnels()
     }
 
     private fun secretProblem(value: String): String? {
         if (!value.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) {
-            return "Il segreto di un agente playit.gg è una stringa di soli caratteri esadecimali, cioè cifre da 0 a 9 e lettere da a a f, senza trattini, spazi o prefissi. Quello che hai incollato contiene altri caratteri."
+            return getString(R.string.network_secret_invalid_characters)
         }
 
         if (value.length % 2 != 0) {
-            return "Il segreto ha una lunghezza dispari, ${value.length} caratteri: una stringa esadecimale valida ha lunghezza pari. Probabilmente ne hai copiato solo un pezzo."
+            return getString(R.string.network_secret_odd_length, value.length)
         }
 
         if (value.length <= CLAIM_CODE_MAX_LENGTH) {
-            return "Questa è la forma di un codice di attivazione, non di un segreto. Il codice compare nell'indirizzo playit.gg/claim/ e serve solo ad approvare l'agente nel browser: il segreto vero te lo restituisce il programma sul computer dopo l'approvazione, ed è una stringa esadecimale molto più lunga."
+            return getString(R.string.network_secret_claim_code)
         }
 
         if (value.length < SECRET_MIN_LENGTH) {
-            return "Il segreto ha solo ${value.length} caratteri, troppo pochi per essere il segreto di un agente. Copia per intero la stringa restituita al termine della procedura di attivazione."
+            return getString(R.string.network_secret_too_short, value.length)
         }
 
         return null
@@ -295,12 +295,16 @@ class NetworkActivity : AppCompatActivity() {
         if (secretAlreadyStored && !secretInputUnlocked) {
             inputSecret.isEnabled = false
             inputSecret.setText("")
-            inputSecret.hint = "Segreto salvato sul dispositivo"
-            buttonSaveSecret.text = "Sostituisci segreto"
+            inputSecret.hint = getString(R.string.network_secret_saved_hint)
+            buttonSaveSecret.text = getString(R.string.network_replace_button)
         } else {
             inputSecret.isEnabled = true
-            inputSecret.hint = if (secretAlreadyStored) "Incolla il nuovo segreto dell'agente" else "Incolla il segreto dell'agente playit.gg"
-            buttonSaveSecret.text = if (secretAlreadyStored) "Salva il nuovo segreto" else "Salva segreto"
+            inputSecret.hint = getString(
+                if (secretAlreadyStored) R.string.network_secret_new_hint else R.string.network_secret_hint
+            )
+            buttonSaveSecret.text = getString(
+                if (secretAlreadyStored) R.string.network_save_new_button else R.string.network_save_button
+            )
         }
     }
 
@@ -315,9 +319,9 @@ class NetworkActivity : AppCompatActivity() {
 
         if (!RootChecker().isDeviceRooted()) {
             AlertDialog.Builder(this)
-                .setTitle("Serve il root")
-                .setMessage("L'agente deve essere eseguito da una partizione con permesso di esecuzione, e su Android questo richiede il root. Senza root il tunnel non può partire.")
-                .setPositiveButton("Ho capito", null)
+                .setTitle(R.string.network_root_required_title)
+                .setMessage(R.string.network_root_required_message)
+                .setPositiveButton(R.string.ui_understood, null)
                 .show()
             return
         }
@@ -325,9 +329,9 @@ class NetworkActivity : AppCompatActivity() {
         val secret = keyStore.getPlayitSecret()
         if (secret.isNullOrBlank()) {
             AlertDialog.Builder(this)
-                .setTitle("Segreto mancante")
-                .setMessage("Incolla prima il segreto del tuo agente playit.gg, poi avvia l'agente.")
-                .setPositiveButton("Ho capito", null)
+                .setTitle(R.string.network_missing_secret_title)
+                .setMessage(R.string.network_missing_secret_message)
+                .setPositiveButton(R.string.ui_understood, null)
                 .show()
             return
         }
@@ -335,9 +339,9 @@ class NetworkActivity : AppCompatActivity() {
         val problem = secretProblem(secret.trim())
         if (problem != null) {
             AlertDialog.Builder(this)
-                .setTitle("Il segreto salvato non è valido")
+                .setTitle(R.string.network_invalid_stored_secret_title)
                 .setMessage(problem)
-                .setPositiveButton("Ho capito", null)
+                .setPositiveButton(R.string.ui_understood, null)
                 .show()
             return
         }
@@ -356,13 +360,13 @@ class NetworkActivity : AppCompatActivity() {
     private fun loadTunnels() {
         val secret = keyStore.getPlayitSecret()
         if (secret.isNullOrBlank()) {
-            textStatus.text = "Nessun segreto salvato"
+            textStatus.text = getString(R.string.network_no_secret_saved)
             containerTunnels.removeAllViews()
             return
         }
 
         buttonRefresh.isEnabled = false
-        textStatus.text = "Lettura tunnel in corso..."
+        textStatus.text = getString(R.string.network_tunnels_loading)
 
         Thread {
             val outcome = try {
@@ -375,8 +379,13 @@ class NetworkActivity : AppCompatActivity() {
                 outcome.fold(
                     onSuccess = { renderTunnels(it) },
                     onFailure = {
-                        textStatus.text = "Impossibile leggere i tunnel"
-                        appendLog("Errore lettura tunnel: ${it.message}")
+                        textStatus.text = getString(R.string.network_tunnels_unavailable)
+                        appendLog(
+                            getString(
+                                R.string.network_tunnel_read_error_log,
+                                it.message ?: getString(R.string.unknown_error)
+                            )
+                        )
                         containerTunnels.removeAllViews()
                     }
                 )
@@ -388,12 +397,12 @@ class NetworkActivity : AppCompatActivity() {
         containerTunnels.removeAllViews()
 
         if (tunnels.isEmpty()) {
-            textStatus.text = "Nessun tunnel configurato sul tuo account playit.gg"
-            appendLog("Nessun tunnel: creane uno su playit.gg con tipo Minecraft Java e porta locale 25565")
+            textStatus.text = getString(R.string.network_no_tunnels_configured)
+            appendLog(getString(R.string.network_no_tunnels_log))
             return
         }
 
-        textStatus.text = "${tunnels.size} tunnel configurati"
+        textStatus.text = getString(R.string.network_tunnels_count, tunnels.size)
 
         for (tunnel in tunnels) {
             containerTunnels.addView(buildTunnelRow(tunnel))
@@ -409,7 +418,7 @@ class NetworkActivity : AppCompatActivity() {
         }
 
         val address = TextView(this).apply {
-            text = tunnel.displayAddress.ifBlank { "indirizzo non assegnato" }
+            text = tunnel.displayAddress.ifBlank { getString(R.string.network_unassigned_address) }
             textSize = 16f
             setTextIsSelectable(true)
         }
@@ -425,7 +434,7 @@ class NetworkActivity : AppCompatActivity() {
 
         if (tunnel.disabledReason != null) {
             val warning = TextView(this).apply {
-                text = "Disattivato: ${tunnel.disabledReason}"
+                text = getString(R.string.network_tunnel_disabled, tunnel.disabledReason)
                 textSize = 12f
             }
             row.addView(warning)
@@ -436,7 +445,7 @@ class NetworkActivity : AppCompatActivity() {
         }
 
         val copyButton = Button(this).apply {
-            text = "Copia indirizzo"
+            text = getString(R.string.network_copy_address)
             setOnClickListener { copyToClipboard(tunnel.displayAddress) }
         }
         actions.addView(copyButton)
@@ -457,23 +466,25 @@ class NetworkActivity : AppCompatActivity() {
 
     private fun copyToClipboard(address: String) {
         if (address.isBlank()) {
-            Toast.makeText(this, "Questo tunnel non ha ancora un indirizzo", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.network_no_tunnel_address, Toast.LENGTH_SHORT).show()
             return
         }
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("indirizzo_server", address))
-        Toast.makeText(this, "Indirizzo copiato", Toast.LENGTH_SHORT).show()
+        clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.network_clipboard_label), address))
+        Toast.makeText(this, R.string.network_address_copied, Toast.LENGTH_SHORT).show()
     }
 
     private fun applyAgentState(running: Boolean) {
-        buttonStartStop.text = if (running) "Ferma agente" else "Avvia agente"
+        buttonStartStop.text = getString(
+            if (running) R.string.network_stop_agent_button else R.string.network_start_agent_button
+        )
         buttonStartStop.isEnabled = true
     }
 
     private fun refreshAgentUi() {
         val running = TunnelService.isAgentRunning
         applyAgentState(running)
-        appendLog(if (running) "Agente in esecuzione" else "Agente fermo")
+        appendLog(getString(if (running) R.string.network_agent_running_log else R.string.network_agent_stopped_log))
     }
 
     private fun appendLog(message: String) {
@@ -484,10 +495,10 @@ class NetworkActivity : AppCompatActivity() {
     override fun onBackPressed() {
         if (TunnelService.isAgentRunning) {
             AlertDialog.Builder(this)
-                .setTitle("Agente ancora attivo")
-                .setMessage("Il tunnel resta attivo anche se esci da questa schermata, perché gira in un servizio in primo piano. Per fermarlo usa il pulsante Ferma agente o la notifica.")
-                .setPositiveButton("Esci") { _, _ -> super.onBackPressed() }
-                .setNegativeButton("Resta qui", null)
+                .setTitle(R.string.network_agent_active_title)
+                .setMessage(R.string.network_agent_active_message)
+                .setPositiveButton(R.string.network_exit_button) { _, _ -> super.onBackPressed() }
+                .setNegativeButton(R.string.network_stay_button, null)
                 .show()
         } else {
             super.onBackPressed()

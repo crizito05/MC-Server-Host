@@ -13,13 +13,13 @@
             android:id="@+id/inputServerName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Nome del server" />
+            android:hint="@string/create_hint_name" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Loader" />
+            android:text="@string/create_label_loader" />
 
         <Spinner
             android:id="@+id/spinnerLoader"
@@ -30,7 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Versione Minecraft" />
+            android:text="@string/create_label_mc_version" />
 
         <Spinner
             android:id="@+id/spinnerMinecraftVersion"
@@ -42,7 +42,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Versione Loader" />
+            android:text="@string/create_label_loader_version" />
 
         <Spinner
             android:id="@+id/spinnerLoaderVersion"
@@ -53,7 +53,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="RAM (MB)" />
+            android:text="@string/create_label_ram" />
 
         <TextView
             android:id="@+id/textRamInfo"
@@ -66,21 +66,21 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Ottimizza RAM" />
+            android:text="@string/create_button_optimize_ram" />
 
         <EditText
             android:id="@+id/inputRam"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="number"
-            android:text="2048" />
+            android:text="@string/create_default_ram" />
 
         <Button
             android:id="@+id/buttonCreateServer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Crea server" />
+            android:text="@string/create_button_create" />
 
         <ProgressBar
             android:id="@+id/progressBar"

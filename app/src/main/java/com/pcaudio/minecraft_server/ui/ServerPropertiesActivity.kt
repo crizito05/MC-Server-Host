@@ -49,7 +49,7 @@ class ServerPropertiesActivity : AppCompatActivity() {
             return
         }
         propertiesFile = File(config.directoryPath, "server.properties")
-        title = "Configura: ${config.name}"
+        title = getString(R.string.props_title, config.name)
 
         switchWhitelist = findViewById(R.id.switchWhitelist)
         switchPvp = findViewById(R.id.switchPvp)
@@ -107,7 +107,7 @@ class ServerPropertiesActivity : AppCompatActivity() {
         content = manager.setValue(content, "view-distance", inputViewDistance.text.toString().ifBlank { "10" })
         content = manager.setValue(content, "motd", inputMotd.text.toString())
         inputRawProperties.setText(content)
-        Toast.makeText(this, "Applicato al testo, ricorda di premere Salva", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.props_applied), Toast.LENGTH_SHORT).show()
     }
 
     private fun saveToFile() {
@@ -117,9 +117,9 @@ class ServerPropertiesActivity : AppCompatActivity() {
         if (MinecraftServerService.isRunning(serverIdForCheck)) {
             isSaving = false
             AlertDialog.Builder(this)
-                .setTitle("Server acceso")
-                .setMessage("Ferma il server prima di modificare le proprietà.")
-                .setPositiveButton("Ho capito", null)
+                .setTitle(getString(R.string.props_server_running))
+                .setMessage(getString(R.string.props_stop_first))
+                .setPositiveButton(getString(R.string.understood), null)
                 .show()
             return
         }
@@ -129,27 +129,27 @@ class ServerPropertiesActivity : AppCompatActivity() {
         if (content.isBlank() || content.length < 20) {
             isSaving = false
             AlertDialog.Builder(this)
-                .setTitle("Contenuto sospetto")
-                .setMessage("Il file sembra vuoto o troppo corto. Salvarlo così potrebbe rompere la configurazione del server. Vuoi salvare comunque?")
-                .setPositiveButton("Salva comunque") { _, _ ->
+                .setTitle(getString(R.string.props_suspicious))
+                .setMessage(getString(R.string.props_suspicious_message))
+                .setPositiveButton(getString(R.string.props_save_anyway)) { _, _ ->
                     manager.writeRaw(propertiesFile, content)
-                    Toast.makeText(this, "Salvato", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, getString(R.string.props_saved), Toast.LENGTH_LONG).show()
                     finish()
                 }
-                .setNegativeButton("Annulla", null)
+                .setNegativeButton(getString(R.string.cancel), null)
                 .show()
             return
         }
 
         try {
             manager.writeRaw(propertiesFile, content)
-            Toast.makeText(this, "Salvato correttamente", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.props_saved_ok), Toast.LENGTH_LONG).show()
             finish()
         } catch (e: Exception) {
             AlertDialog.Builder(this)
-                .setTitle("Errore salvataggio")
-                .setMessage(e.message ?: "Errore sconosciuto")
-                .setPositiveButton("OK", null)
+                .setTitle(getString(R.string.props_save_error))
+                .setMessage(e.message ?: getString(R.string.unknown_error))
+                .setPositiveButton(getString(R.string.ok), null)
                 .show()
         } finally {
             isSaving = false

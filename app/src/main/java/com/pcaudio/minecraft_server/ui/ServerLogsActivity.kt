@@ -19,11 +19,12 @@ class ServerLogsActivity : AppCompatActivity() {
     private lateinit var adapter: LogSessionAdapter
     private lateinit var recyclerLogs: RecyclerView
     private lateinit var textEmptyLogs: TextView
-    private val analyzer = LogAnalyzer()
+    private lateinit var analyzer: LogAnalyzer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_server_logs)
+        analyzer = LogAnalyzer(resources)
 
         val serverId = intent.getStringExtra("server_id")
         val repository = ServerRepository(this)
@@ -33,7 +34,7 @@ class ServerLogsActivity : AppCompatActivity() {
             return
         }
         logsDir = File(config.directoryPath, "app_logs")
-        title = "Log: ${config.name}"
+        title = getString(R.string.logs_server_title, config.name)
 
         recyclerLogs = findViewById(R.id.recyclerLogs)
         textEmptyLogs = findViewById(R.id.textEmptyLogs)
@@ -63,9 +64,9 @@ class ServerLogsActivity : AppCompatActivity() {
         val latest = logsDir.listFiles()?.maxByOrNull { it.lastModified() }
         if (latest == null) {
             AlertDialog.Builder(this)
-                .setTitle("Nessun log")
-                .setMessage("Non è ancora stato avviato nessun server, quindi non ci sono log da mostrare.")
-                .setPositiveButton("OK", null)
+                .setTitle(R.string.logs_none_title)
+                .setMessage(R.string.logs_none_message)
+                .setPositiveButton(R.string.logs_ok, null)
                 .show()
             return
         }
@@ -73,7 +74,7 @@ class ServerLogsActivity : AppCompatActivity() {
     }
 
     private fun showLogContent(file: File) {
-        val content = try { file.readText() } catch (e: Exception) { "Impossibile leggere il file: ${e.message}" }
+        val content = try { file.readText() } catch (e: Exception) { getString(R.string.logs_read_error, e.message) }
         val issues = analyzer.analyze(content)
 
         val scrollView = android.widget.ScrollView(this)
@@ -84,7 +85,7 @@ class ServerLogsActivity : AppCompatActivity() {
 
         if (issues.isNotEmpty()) {
             val issuesTitle = TextView(this)
-            issuesTitle.text = "Problemi rilevati:"
+            issuesTitle.text = getString(R.string.logs_issues_found)
             issuesTitle.textSize = 14f
             issuesTitle.setTypeface(null, android.graphics.Typeface.BOLD)
             container.addView(issuesTitle)
@@ -120,14 +121,14 @@ class ServerLogsActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(file.name)
             .setView(scrollView)
-            .setPositiveButton("Chiudi", null)
+            .setPositiveButton(R.string.logs_close, null)
             .show()
     }
 
     private fun deleteLog(file: File) {
         AlertDialog.Builder(this)
-            .setTitle("Eliminare questo log?")
-            .setPositiveButton("Elimina") { _, _ ->
+            .setTitle(R.string.logs_delete_confirm)
+            .setPositiveButton(R.string.logs_delete) { _, _ ->
                 val deleted = try {
                     file.delete()
                 } catch (e: Exception) {
@@ -147,7 +148,7 @@ class ServerLogsActivity : AppCompatActivity() {
                     refreshLogList()
                 }
             }
-            .setNegativeButton("Annulla", null)
+            .setNegativeButton(R.string.logs_cancel, null)
             .show()
     }
 }

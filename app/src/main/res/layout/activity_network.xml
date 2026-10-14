@@ -19,7 +19,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Per giocare da fuori casa serve un tunnel. L'app usa playit.gg: puoi attivare l'agente dal telefono senza computer, oppure incollare qui il segreto dell'agente ottenuto dal sito o dal computer. Il segreto resta sul telefono, custodito nel keystore Android."
+                android:text="@string/network_intro"
                 android:textSize="13sp" />
 
             <Button
@@ -27,14 +27,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:text="Attiva agente dal telefono" />
+                android:text="@string/network_claim_button" />
 
             <EditText
                 android:id="@+id/inputSecret"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="Incolla il segreto di playit.gg"
+                android:hint="@string/network_secret_hint"
                 android:inputType="textNoSuggestions"
                 android:maxLines="3" />
 
@@ -43,21 +43,21 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Salva segreto" />
+                android:text="@string/network_save_button" />
 
             <Button
                 android:id="@+id/buttonStartStopAgent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Avvia agente" />
+                android:text="@string/network_start_agent_button" />
 
             <Button
                 android:id="@+id/buttonRefreshTunnels"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Leggi indirizzi" />
+                android:text="@string/network_read_addresses_button" />
 
             <TextView
                 android:id="@+id/textNetworkStatus"
@@ -77,7 +77,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Log dell'agente"
+                android:text="@string/network_agent_log_label"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
@@ -110,7 +110,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        android:contentDescription="Apri la guida"
+        android:contentDescription="@string/network_help_content_description"
         android:src="@android:drawable/ic_menu_help" />
 
 </FrameLayout>

@@ -42,7 +42,7 @@
             android:id="@+id/buttonInstallVersion"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Installa" />
+            android:text="@string/ui_install" />
 
     </LinearLayout>
 

@@ -2,6 +2,7 @@ package com.pcaudio.minecraft_server.ui
 
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,12 +15,12 @@ class InstallationLogsActivity : AppCompatActivity() {
     private lateinit var logsDir: File
     private lateinit var adapter: LogSessionAdapter
     private lateinit var recyclerLogs: RecyclerView
-    private lateinit var textEmpty: android.widget.TextView
+    private lateinit var textEmpty: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_installation_logs)
-        title = "Log di installazione"
+        title = getString(R.string.logs_installation_title)
 
         logsDir = File(filesDir, "creation_logs")
         recyclerLogs = findViewById(R.id.recyclerInstallLogs)
@@ -45,10 +46,10 @@ class InstallationLogsActivity : AppCompatActivity() {
     }
 
     private fun showLogContent(file: File) {
-        val content = try { file.readText() } catch (e: Exception) { "Impossibile leggere il file: ${e.message}" }
+        val content = try { file.readText() } catch (e: Exception) { getString(R.string.logs_read_error, e.message) }
 
         val scrollView = android.widget.ScrollView(this)
-        val textView = android.widget.TextView(this)
+        val textView = TextView(this)
         textView.text = content
         textView.textSize = 11f
         textView.typeface = android.graphics.Typeface.MONOSPACE
@@ -60,18 +61,18 @@ class InstallationLogsActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(file.name)
             .setView(scrollView)
-            .setPositiveButton("Chiudi", null)
+            .setPositiveButton(R.string.logs_close, null)
             .show()
     }
 
     private fun deleteLog(file: File) {
         AlertDialog.Builder(this)
-            .setTitle("Eliminare questo log?")
-            .setPositiveButton("Elimina") { _, _ ->
+            .setTitle(R.string.logs_delete_confirm)
+            .setPositiveButton(R.string.logs_delete) { _, _ ->
                 file.delete()
                 refreshList()
             }
-            .setNegativeButton("Annulla", null)
+            .setNegativeButton(R.string.logs_cancel, null)
             .show()
     }
 }

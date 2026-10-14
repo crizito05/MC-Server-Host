@@ -63,7 +63,7 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
         modsDir = File(serverDir, "mods")
         tracker = InstalledModsTracker(serverDir)
         pinStore = ModPinStore(serverDir)
-        title = "Mod installate: ${config.name}"
+        title = getString(R.string.installed_title, config.name)
 
         val curseForgeKey = ApiKeyStore(this).getCurseForgeKey()
         catalog = ModCatalog(
@@ -88,7 +88,7 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
         if (config.loader == ModLoader.VANILLA) {
             buttonCheckUpdates.visibility = View.GONE
             buttonUpdateAll.visibility = View.GONE
-            textEmptyInstalled.text = "Nessuna mod installata. Gli aggiornamenti non sono disponibili sui server Vanilla."
+            textEmptyInstalled.text = getString(R.string.installed_empty_vanilla)
         }
 
         buttonCheckUpdates.setOnClickListener { checkUpdates() }
@@ -129,17 +129,17 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
         }
         if (isUpdate) {
             if (success) {
-                Toast.makeText(this, "$modTitle aggiornata. Riavvia il server per applicare la modifica.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.installed_toast_updated, modTitle), Toast.LENGTH_LONG).show()
             } else {
-                Toast.makeText(this, "Aggiornamento di $modTitle non riuscito: ${error ?: "errore sconosciuto"}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.installed_toast_update_failed, modTitle, error ?: getString(R.string.ui_unknown_error)), Toast.LENGTH_LONG).show()
             }
             refreshList()
             return
         }
         if (success) {
-            Toast.makeText(this, "$modTitle installata", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.installed_toast_installed, modTitle), Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, "Installazione di $modTitle non riuscita: ${error ?: "errore sconosciuto"}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.installed_toast_install_failed, modTitle, error ?: getString(R.string.ui_unknown_error)), Toast.LENGTH_LONG).show()
         }
         refreshList()
     }
@@ -183,20 +183,20 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
         if (config.loader == ModLoader.VANILLA) return
         if (updateBatchRunning) {
             buttonUpdateAll.isEnabled = false
-            buttonUpdateAll.text = "Aggiornamento..."
+            buttonUpdateAll.text = getString(R.string.installed_button_updating)
             return
         }
         val available = updateEntries.count {
             it.status == ModUpdateChecker.STATUS_UPDATE_AVAILABLE && !it.locked
         }
-        buttonUpdateAll.text = if (available > 0) "Aggiorna tutto ($available)" else "Aggiorna tutto"
+        buttonUpdateAll.text = if (available > 0) getString(R.string.installed_button_update_all_count, available) else getString(R.string.installed_button_update_all)
         buttonUpdateAll.isEnabled = available > 0 && !checkingUpdates
     }
 
     private fun checkUpdates() {
         if (checkingUpdates || updateBatchRunning) return
         if (config.loader == ModLoader.VANILLA) {
-            Toast.makeText(this, "Gli aggiornamenti non sono disponibili sui server Vanilla", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, R.string.installed_toast_vanilla, Toast.LENGTH_LONG).show()
             return
         }
         val files = modsDir.listFiles()
@@ -204,12 +204,12 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
             ?.sortedBy { it.name }
             ?: emptyList()
         if (files.isEmpty()) {
-            Toast.makeText(this, "Nessuna mod installata", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.installed_empty, Toast.LENGTH_SHORT).show()
             return
         }
         checkingUpdates = true
         buttonCheckUpdates.isEnabled = false
-        buttonCheckUpdates.text = "Verifica in corso..."
+        buttonCheckUpdates.text = getString(R.string.installed_button_checking)
         updateUpdateAllButtonState()
 
         Thread {
@@ -228,13 +228,13 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
                 adapter.updateEntries(entries)
                 checkingUpdates = false
                 buttonCheckUpdates.isEnabled = true
-                buttonCheckUpdates.text = "Verifica aggiornamenti"
+                buttonCheckUpdates.text = getString(R.string.installed_button_check)
                 updateUpdateAllButtonState()
                 val message = when {
-                    available > 0 && blocked > 0 -> "$available aggiornamenti disponibili, $blocked mod con versione bloccata"
-                    available > 0 -> "$available aggiornamenti disponibili"
-                    blocked > 0 -> "Nessun aggiornamento. $blocked mod con versione bloccata"
-                    else -> "Nessun aggiornamento disponibile"
+                    available > 0 && blocked > 0 -> getString(R.string.installed_updates_and_blocked, available, blocked)
+                    available > 0 -> getString(R.string.installed_updates_available, available)
+                    blocked > 0 -> getString(R.string.installed_no_updates_blocked, blocked)
+                    else -> getString(R.string.installed_no_updates)
                 }
                 Toast.makeText(this, message, Toast.LENGTH_LONG).show()
             }
@@ -247,7 +247,7 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
             it.status == ModUpdateChecker.STATUS_UPDATE_AVAILABLE && !it.locked
         }
         if (targets.isEmpty()) {
-            Toast.makeText(this, "Nessuna mod sbloccata da aggiornare", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, R.string.installed_toast_none_unlocked, Toast.LENGTH_LONG).show()
             return
         }
         val needsCurseForgeKey = targets.any { it.sourceProvider == "CurseForge" }
@@ -276,7 +276,7 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
     private fun startNextInQueue() {
         val entry = updateQueue.removeFirst()
         val index = updateBatchTotal - updateQueue.size
-        buttonUpdateAll.text = "Aggiornamento $index di $updateBatchTotal..."
+        buttonUpdateAll.text = getString(R.string.installed_button_updating_index, index, updateBatchTotal)
         startUpdate(entry, true)
     }
 
@@ -286,9 +286,9 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
         updateQueue.clear()
         buttonCheckUpdates.isEnabled = true
         val message = when {
-            updateBatchFailed == 0 -> "$updateBatchSuccess mod aggiornate. Riavvia il server per applicare le modifiche."
-            updateBatchSuccess == 0 -> "Nessuna mod aggiornata: $updateBatchFailed tentativi non riusciti"
-            else -> "$updateBatchSuccess mod aggiornate, $updateBatchFailed non riuscite. Riavvia il server per applicare le modifiche."
+            updateBatchFailed == 0 -> getString(R.string.installed_batch_all_ok, updateBatchSuccess)
+            updateBatchSuccess == 0 -> getString(R.string.installed_batch_none, updateBatchFailed)
+            else -> getString(R.string.installed_batch_partial, updateBatchSuccess, updateBatchFailed)
         }
         updateBatchSuccess = 0
         updateBatchFailed = 0
@@ -301,13 +301,13 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
 
     private fun confirmRemove(file: File) {
         AlertDialog.Builder(this)
-            .setTitle("Rimuovere questa mod?")
-            .setMessage("${file.name} verrà eliminata. Ricorda di riavviare il server per applicare la modifica.")
-            .setPositiveButton("Rimuovi") { _, _ ->
+            .setTitle(R.string.installed_remove_title)
+            .setMessage(getString(R.string.installed_remove_message, file.name))
+            .setPositiveButton(R.string.installed_remove_button) { _, _ ->
                 file.delete()
                 refreshList()
             }
-            .setNegativeButton("Annulla", null)
+            .setNegativeButton(R.string.ui_cancel, null)
             .show()
     }
 
@@ -315,8 +315,8 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
         if (entry.sourceProvider == null || entry.projectId == null) {
             AlertDialog.Builder(this)
                 .setTitle(entry.file.name)
-                .setMessage("Questa mod non ha un'origine registrata, quindi non può essere aggiornata né bloccata. Puoi comunque rimuoverla.")
-                .setPositiveButton("Ho capito", null)
+                .setMessage(R.string.installed_no_origin_message)
+                .setPositiveButton(R.string.ui_understood, null)
                 .show()
             return
         }
@@ -326,21 +326,21 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
 
         if (entry.locked) {
             val pinned = pinStore.getPinned(key)
-            builder.setMessage("Versione bloccata: ${pinned?.versionNumber ?: entry.file.name}. Questa mod non verrà aggiornata finché non la sblocchi.")
-            builder.setPositiveButton("Sblocca aggiornamenti") { _, _ ->
+            builder.setMessage(getString(R.string.installed_pinned_message, pinned?.versionNumber ?: entry.file.name))
+            builder.setPositiveButton(R.string.installed_button_unpin) { _, _ ->
                 pinStore.unpin(key)
-                Toast.makeText(this, "Aggiornamenti sbloccati", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.installed_toast_unpinned, Toast.LENGTH_SHORT).show()
                 refreshList()
             }
         } else {
-            builder.setMessage("Bloccando la versione, questa mod resterà così com'è e la verifica degli aggiornamenti la ignorerà, finché non la sblocchi.")
-            builder.setPositiveButton("Blocca versione") { _, _ ->
+            builder.setMessage(R.string.installed_pin_message)
+            builder.setPositiveButton(R.string.installed_button_pin) { _, _ ->
                 pinStore.pin(key, entry.file.name, entry.newest?.versionNumber ?: "")
-                Toast.makeText(this, "Versione bloccata", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.installed_toast_pinned, Toast.LENGTH_SHORT).show()
                 refreshList()
             }
         }
-        builder.setNegativeButton("Annulla", null)
+        builder.setNegativeButton(R.string.ui_cancel, null)
         builder.show()
     }
 
@@ -349,7 +349,7 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
         val projectId = entry.projectId
         val provider = entry.sourceProvider
         if (newest == null || projectId == null || provider == null) {
-            Toast.makeText(this, "Aggiornamento non disponibile per ${entry.file.name}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.installed_toast_update_unavailable, entry.file.name), Toast.LENGTH_LONG).show()
             if (isBatch && updateBatchRunning) {
                 updateBatchFailed++
                 if (updateQueue.isNotEmpty()) startNextInQueue() else finishBatch()
@@ -357,7 +357,7 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
             return
         }
         if (newest.downloadUrl.isBlank()) {
-            Toast.makeText(this, "L'autore di ${entry.file.name} non consente il download da applicazioni esterne", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.installed_toast_download_blocked, entry.file.name), Toast.LENGTH_LONG).show()
             if (isBatch && updateBatchRunning) {
                 updateBatchFailed++
                 if (updateQueue.isNotEmpty()) startNextInQueue() else finishBatch()
@@ -386,7 +386,7 @@ class InstalledModsActivity : AppCompatActivity(), (Boolean, String, String?, Bo
             startService(intent)
         }
         if (!isBatch) {
-            Toast.makeText(this, "Aggiornamento di ${entry.file.name} in corso", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.installed_toast_update_started, entry.file.name), Toast.LENGTH_SHORT).show()
         }
     }
 }

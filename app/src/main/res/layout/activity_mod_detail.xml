@@ -52,14 +52,14 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Description" />
+            android:text="@string/moddetail_tab_description" />
 
         <Button
             android:id="@+id/buttonTabVersions"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Versions" />
+            android:text="@string/moddetail_tab_versions" />
 
     </LinearLayout>
 
@@ -95,6 +95,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:text="Installa" />
+        android:text="@string/ui_install" />
 
 </LinearLayout>

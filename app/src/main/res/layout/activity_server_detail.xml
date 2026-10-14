@@ -45,35 +45,35 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Avvia" />
+        android:text="@string/common_start" />
 
     <Button
         android:id="@+id/buttonConfigureProperties"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Configura server.properties" />
+        android:text="@string/detail_configure" />
 
     <Button
         android:id="@+id/buttonBrowseMods"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Sfoglia e installa mod" />
+        android:text="@string/detail_browse_mods" />
 
     <Button
         android:id="@+id/buttonViewInstalledMods"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Mod installate" />
+        android:text="@string/detail_installed_mods" />
 
     <Button
         android:id="@+id/buttonViewLogs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Vedi log" />
+        android:text="@string/detail_view_logs" />
 
     <ScrollView
         android:id="@+id/consoleScroll"
@@ -105,13 +105,13 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Console" />
+            android:hint="@string/detail_console_hint" />
 
         <Button
             android:id="@+id/buttonSendCommand"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Invia" />
+            android:text="@string/common_send" />
 
     </LinearLayout>
 

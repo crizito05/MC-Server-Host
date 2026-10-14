@@ -33,12 +33,12 @@
         android:id="@+id/buttonViewLog"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Vedi" />
+        android:text="@string/logs_view" />
 
     <Button
         android:id="@+id/buttonDeleteLog"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Elimina" />
+        android:text="@string/logs_delete" />
 
 </LinearLayout>

@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -18,6 +20,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pcaudio.minecraft_server.R
+import com.pcaudio.minecraft_server.core.AppLanguage
 import com.pcaudio.minecraft_server.core.ServerConfig
 import com.pcaudio.minecraft_server.core.ServerDeletionManager
 import com.pcaudio.minecraft_server.core.ServerRepository
@@ -67,6 +70,24 @@ class MainActivity : AppCompatActivity() {
         requestNotificationPermissionIfNeeded()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.findItem(R.id.actionToggleLanguage)?.title = if (AppLanguage.isEnglish()) "Italiano" else "English"
+        return super.onPrepareOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.actionToggleLanguage) {
+            AppLanguage.toggle()
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
     override fun onResume() {
         super.onResume()
         refreshServerList()
@@ -96,24 +117,24 @@ class MainActivity : AppCompatActivity() {
         container.setPadding(padding, padding, padding, padding)
 
         val nameInput = EditText(this)
-        nameInput.hint = "Nome"
+        nameInput.hint = getString(R.string.edit_name_hint)
         nameInput.setText(server.name)
         container.addView(nameInput)
 
         val ramInfoText = TextView(this)
-        ramInfoText.text = "RAM totale: ${totalRam}MB — consigliata fino a ${recommendedRam}MB"
+        ramInfoText.text = getString(R.string.edit_ram_total, totalRam, recommendedRam)
         ramInfoText.textSize = 12f
         ramInfoText.setPadding(0, padding, 0, 0)
         container.addView(ramInfoText)
 
         val ramInput = EditText(this)
-        ramInput.hint = "RAM (MB)"
+        ramInput.hint = getString(R.string.edit_ram_hint)
         ramInput.inputType = InputType.TYPE_CLASS_NUMBER
         ramInput.setText(server.ramMb.toString())
         container.addView(ramInput)
 
         val optimizeButton = Button(this)
-        optimizeButton.text = "Ottimizza RAM"
+        optimizeButton.text = getString(R.string.edit_optimize)
         container.addView(optimizeButton)
 
         optimizeButton.setOnClickListener {
@@ -122,24 +143,24 @@ class MainActivity : AppCompatActivity() {
                 val optimizer = com.pcaudio.minecraft_server.core.RamOptimizer(this)
                 val result = optimizer.optimize { }
                 runOnUiThread {
-                    ramInfoText.text = "RAM totale: ${totalRam}MB — disponibile ora: ${result.newAvailableRamMb}MB"
+                    ramInfoText.text = getString(R.string.edit_ram_available, totalRam, result.newAvailableRamMb)
                     optimizeButton.isEnabled = true
                 }
             }.start()
         }
 
         AlertDialog.Builder(this)
-            .setTitle("Modifica server")
+            .setTitle(getString(R.string.edit_title))
             .setView(container)
-            .setPositiveButton("Salva") { _, _ ->
+            .setPositiveButton(getString(R.string.edit_save)) { _, _ ->
                 val newName = nameInput.text.toString().trim()
                 val newRam = ramInput.text.toString().toIntOrNull() ?: server.ramMb
 
                 if (newRam > totalRam) {
                     AlertDialog.Builder(this)
-                        .setTitle("RAM non disponibile")
-                        .setMessage("Il dispositivo ha solo ${totalRam}MB di RAM totale.")
-                        .setPositiveButton("Ho capito", null)
+                        .setTitle(getString(R.string.edit_ram_error_title))
+                        .setMessage(getString(R.string.edit_ram_error_message, totalRam))
+                        .setPositiveButton(getString(R.string.understood), null)
                         .show()
                     return@setPositiveButton
                 }
@@ -149,29 +170,29 @@ class MainActivity : AppCompatActivity() {
                     refreshServerList()
                 }
             }
-            .setNegativeButton("Annulla", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 
     private fun onDeleteClicked(server: ServerConfig) {
         AlertDialog.Builder(this)
-            .setTitle("Eliminare il server?")
-            .setMessage("Questa azione cancella definitivamente ${server.name}, incluso il mondo salvato e tutte le mod. Non è recuperabile.")
-            .setPositiveButton("Elimina") { _, _ ->
+            .setTitle(getString(R.string.delete_title))
+            .setMessage(getString(R.string.delete_message, server.name))
+            .setPositiveButton(getString(R.string.delete_confirm)) { _, _ ->
                 deletionManager.deleteServer(server.id) { success, error ->
                     runOnUiThread {
                         if (!success) {
                             AlertDialog.Builder(this)
-                                .setTitle("Errore eliminazione")
-                                .setMessage(error ?: "Errore sconosciuto")
-                                .setPositiveButton("OK", null)
+                                .setTitle(getString(R.string.delete_error_title))
+                                .setMessage(error ?: getString(R.string.unknown_error))
+                                .setPositiveButton(getString(R.string.ok), null)
                                 .show()
                         }
                         refreshServerList()
                     }
                 }
             }
-            .setNegativeButton("Annulla", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 

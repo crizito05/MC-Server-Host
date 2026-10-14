@@ -9,7 +9,7 @@
         android:id="@+id/textEmptyInstallLogs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Nessun log di installazione"
+        android:text="@string/logs_empty_installation"
         android:gravity="center"
         android:layout_marginTop="32dp" />
 
